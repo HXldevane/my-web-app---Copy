@@ -2,6 +2,8 @@ import { drawSplines } from "./lines.js";
 import { generateRandomRoad, drawRoad } from "./road.js";
 import { generateSpot, drawSpot } from "./spot.js";
 import { initializePoints, resetPoints } from "./points.js";
+import { checkIntersections } from "./calculate.js";
+import { Bezier } from "bezier-js"; // Import Bezier class
 
 document.addEventListener("DOMContentLoaded", () => {
     const canvas = document.getElementById("canvas");
@@ -144,6 +146,35 @@ document.addEventListener("DOMContentLoaded", () => {
             console.log("Drawing splines between points...");
             const allPoints = [roadEntry, points[0], points[1], points[2], points[3], roadExit]; // Updated sequence
             drawSplines(ctx, allPoints, minRadius); // Call the imported function to draw splines
+
+            // Validate points before creating splines
+            const validPoints = allPoints.filter((point) => {
+                const isValid = point.x !== null && point.y !== null;
+                if (!isValid) {
+                    console.error("Invalid point detected:", point);
+                }
+                return isValid;
+            });
+
+            // Generate spline segments
+            const splineSegments = [];
+            for (let i = 0; i < validPoints.length - 1; i++) {
+                const start = validPoints[i];
+                const end = validPoints[i + 1];
+                if (start && end) {
+                    splineSegments.push(
+                        new Bezier([
+                            { x: start.x, y: start.y },
+                            { x: end.x, y: end.y },
+                        ])
+                    );
+                } else {
+                    console.error("Invalid segment detected:", { start, end });
+                }
+            }
+
+            // Check for intersections
+            checkIntersections(splineSegments, ctx);
         } else {
             console.log("Please place all points before drawing lines.");
         }
