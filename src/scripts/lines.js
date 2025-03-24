@@ -25,27 +25,16 @@ function createSpline(start, end, minRadius, segmentType) {
 
     let startControlX, startControlY, endControlX, endControlY;
 
-    if (segmentType === "queue-to-cusp") {
+    if (segmentType === "entry-to-queue" || segmentType === "queue-to-cusp" || segmentType === "spot-to-exit" || segmentType === "exit-to-exit") {
         startControlX = start.x + controlDistance * Math.cos(start.heading);
         startControlY = start.y + controlDistance * Math.sin(start.heading);
         endControlX = end.x - controlDistance * Math.cos(end.heading);
         endControlY = end.y - controlDistance * Math.sin(end.heading);
-
-        console.log("Queue to Cusp Control Points:");
-        console.log("Start:", start.x, start.y);
-        console.log("Start Control:", startControlX, startControlY);
-        console.log("End Control:", endControlX, endControlY);
-        console.log("End:", end.x, end.y);
-    } else if (segmentType === "cusp-to-spot") {
+    } else if (segmentType === "cusp-to-spot-opposite") {
         startControlX = start.x - controlDistance * Math.cos(start.heading);
         startControlY = start.y - controlDistance * Math.sin(start.heading);
         endControlX = end.x + controlDistance * Math.cos(end.heading);
         endControlY = end.y + controlDistance * Math.sin(end.heading);
-    } else if (segmentType === "spot-to-exit") {
-        startControlX = start.x + controlDistance * Math.cos(start.heading);
-        startControlY = start.y + controlDistance * Math.sin(start.heading);
-        endControlX = end.x - controlDistance * Math.cos(end.heading);
-        endControlY = end.y - controlDistance * Math.sin(end.heading);
     }
 
     return new Bezier(start.x, start.y, startControlX, startControlY, endControlX, endControlY, end.x, end.y);
@@ -66,11 +55,14 @@ function drawCurve(ctx, curve) {
 
 function drawSplines(ctx, points, minRadius) {
     const segments = [
-        { start: points[0], end: points[1], type: "queue-to-cusp" },
-        { start: points[1], end: points[2], type: "cusp-to-spot" },
-        { start: points[2], end: points[3], type: "spot-to-exit" },
+        { start: points[0], end: points[1], type: "entry-to-queue" },
+        { start: points[1], end: points[2], type: "queue-to-cusp" },
+        { start: points[2], end: points[3], type: "cusp-to-spot-opposite" },
+        { start: points[3], end: points[4], type: "spot-to-exit" },
+        { start: points[4], end: points[5], type: "exit-to-exit" },
     ];
 
+    // Do not clear the canvas here to preserve existing drawings
     segments.forEach((segment) => {
         if (segment.start.x !== null && segment.end.x !== null) {
             console.log(`Processing segment: ${segment.type}`);
