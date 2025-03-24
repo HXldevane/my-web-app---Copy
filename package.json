@@ -1,0 +1,13 @@
+{
+  "name": "my-web-app",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "dev": "vite"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "vite": "^4.0.0"
+  }
+}
