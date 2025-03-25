@@ -1,9 +1,9 @@
 import { Bezier } from "bezier-js";
 
-function generateRandomRoad(canvasHeight) {
+function generateRandomRoad(canvasHeight, scale) {
     const angle = Math.random() * 60 - 30; // Random angle between -30 and 30 degrees
     const x = 100; // Fixed x position
-    const y = Math.random() * (canvasHeight - 600) + 300; // Between 150px from top and bottom
+    const y = Math.random() * 300 + (canvasHeight/scale / 2)- 150; // Between 150px from top and bottom
 
     return { x, y, angle };
 }
@@ -31,8 +31,8 @@ function generateRoadPoints(road) {
     return { roadEntry, roadExit };
 }
 
-function generateAllRoadPoints(canvasHeight) {
-    const road = generateRandomRoad(canvasHeight);
+function generateAllRoadPoints(canvasHeight, scale) {
+    const road = generateRandomRoad(canvasHeight, scale);
     const { roadEntry, roadExit } = generateRoadPoints(road);
     return { road, roadEntry, roadExit };
 }

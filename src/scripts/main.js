@@ -34,7 +34,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const minRadius = 50;
 
     // Generate all road points
-    let { road, roadEntry, roadExit } = generateAllRoadPoints(canvas.height);
+    let { road, roadEntry, roadExit } = generateAllRoadPoints(canvas.height, scale);
 
     let spot = generateSpot(canvas.width, canvas.height);
     points[2] = { ...spot, name: "Spot" };
@@ -131,7 +131,7 @@ document.addEventListener("DOMContentLoaded", () => {
         resetPoints(points);
         selectedPointIndex = null;
         console.log("Canvas regenerated. All points reset.");
-        ({ road, roadEntry, roadExit } = generateAllRoadPoints(canvas.height)); // Regenerate all road points
+        ({ road, roadEntry, roadExit } = generateAllRoadPoints(canvas.height, scale)); // Regenerate all road points
         spot = generateSpot(canvas.width, canvas.height);
         points[2] = { ...spot, name: "Spot" };
 
