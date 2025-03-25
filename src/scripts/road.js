@@ -51,132 +51,80 @@ function drawRoad(ctx, road) {
     ctx.restore();
 }
 
-function generateLoadShape(road, bottomRightCornerRoad, spot, canvasWidth, canvasHeight, difficulty) {
-    // Calculate topRightCornerRoad considering the road's rotation angle
-    const angle = road.angle * (Math.PI / 180); // Convert angle to radians
-    const halfWidth = 30; // xwHalf of the road width (60 / 2)
-    const halfHeight = 50; // Half of the road height (100 / 2)
+// Generate random points for interpolation
+function generateInterpolatedPoints(start, end, numPoints, difficulty) {
+    const points = [];
+    for (let i = 1; i <= numPoints; i++) {
+        const t = i / (numPoints + 1); // Interpolation factor
+        const x = start.x + t * (end.x - start.x);
+        let y = start.y + t * (end.y - start.y);
 
-    const topRightCornerRoad = {
+        // Add randomness to the y-coordinate based on difficulty
+        const randomness = difficulty === "easy" ? 20 : difficulty === "medium" ? 50 : 100;
+        y += Math.random() * randomness - randomness / 2;
+
+        points.push({ x, y });
+    }
+    return points;
+}
+
+// Generate the load shape points
+function generateLoadShape(road, topRightCornerRoad, spot, canvasWidth, canvasHeight, difficulty) {
+    const angle = road.angle * (Math.PI / 180);
+    const halfWidth = 30;
+    const halfHeight = 50;
+
+    // Define fixed points
+    const bottomRightCornerRoad = {
         x: road.x + halfWidth * Math.cos(angle) - halfHeight * Math.sin(angle),
         y: road.y + halfWidth * Math.sin(angle) + halfHeight * Math.cos(angle),
     };
 
-  
+    const bottomRightCornerRoadPoint = {
+        x: bottomRightCornerRoad.x,
+        y: bottomRightCornerRoad.y,
+    };
 
-    let aboveSpot; // P2
-    if (difficulty === "easy") {
-        aboveSpot = {
-            y: Math.random() * (spot.y - 200),
-            x: spot.x + Math.random() * 10, // Random offset for x
-        };
-    } else if (difficulty === "medium") {
-        aboveSpot = {
-            y: spot.y / 1.3,
-            x: spot.x + Math.random() * 30, // Random offset for x
-        };
-    } else if (difficulty === "hard") {
-        aboveSpot = {
-            y: spot.y / 1.3,
-            x: spot.x + Math.random() * 30, // Random offset for x
-        };
-    }
-    
-    let belowSpot; // P3
-    if (difficulty === "easy") {
-        belowSpot = {
-            y: canvasHeight - (Math.random() * (canvasHeight -spot.y - 100)),
-            x: spot.x + Math.random() * 30,
-        };
-    } else if (difficulty === "medium") {
-        belowSpot = {
-            y: (spot.y) / 1.7,
-            x: (canvasWidth - spot.x) + spot.x + Math.random() * 40,
-        };
-    } else if (difficulty === "hard") {
-        belowSpot = {
-            y: ((canvasHeight - spot.y) + spot.y) / 2,
-            x: (canvasWidth - spot.x) + spot.x + Math.random() * 50,
-        };
-    }
+    const aboveRoad = {
+        x: topRightCornerRoad.x + (difficulty === "easy" ? 10 : difficulty === "medium" ? 30 : 100) * (Math.random() - 0.5),
+        y: topRightCornerRoad.y - (difficulty === "easy" ? 200 : difficulty === "medium" ? 150 : 80),
+    };
 
-    let aboveRoad; // P2
-    if (difficulty === "easy") {
-        aboveRoad = {
-            y: Math.random() * (canvasHeight / 4),
-            x: topRightCornerRoad.x + Math.random() * 10, // Random offset for x
-        };
-    } else if (difficulty === "medium") {
-        aboveRoad = {
-            y: spot.y / 1.3,
-            x: spot.x + Math.random() * 30, // Random offset for x
-        };
-    } else if (difficulty === "hard") {
-        aboveRoad = {
-            y: spot.y / 1.3,
-            x: spot.x + Math.random() * 30, // Random offset for x
-        };
-    }
-    
-    let belowRoad; // P3
-    if (difficulty === "easy") {
-        belowRoad = {
-            y: canvasHeight - (Math.random() * (canvasHeight / 4)),
-            x: bottomRightCornerRoad.x + Math.random() * 30,
-        };
-    } else if (difficulty === "medium") {
-        belowRoad = {
-            y: (spot.y) / 1.7,
-            x: (canvasWidth - spot.x) + spot.x + Math.random() * 40,
-        };
-    } else if (difficulty === "hard") {
-        belowRoad = {
-            y: ((canvasHeight - spot.y) + spot.y) / 2,
-            x: (canvasWidth - spot.x) + spot.x + Math.random() * 50,
-        };
-    }
+    const aboveSpot = {
+        x: spot.x + (difficulty === "easy" ? 20 : difficulty === "medium" ? 40 : 60), // Always slightly to the right of the spot
+        y: spot.y - (difficulty === "easy" ? 200 : difficulty === "medium" ? 150 : 80),
+    };
 
-    // generate a random numbe rbetwene 1 and 3
-    // generate x number of points, random * 200 from the top in y, kind of evenly, but also randomly placed in y depending on number of points
-    // save them as an array to enter into points later.
-    // Let me have easy, med and hard for x and y positions. 
+    const belowSpot = {
+        x: spot.x + (difficulty === "easy" ? 20 : difficulty === "medium" ? 40 : 60), // Always slightly to the right of the spot
+        y: spot.y + (difficulty === "easy" ? 200 : difficulty === "medium" ? 150 : 80),
+    };
 
-    // DO THIS AGAIN FOR bottom interp with different random numbers. 
+    const belowRoad = {
+        x: bottomRightCornerRoad.x + (difficulty === "easy" ? 10 : difficulty === "medium" ? 30 : 100) * (Math.random() - 0.5),
+        y: bottomRightCornerRoad.y + (difficulty === "easy" ? 200 : difficulty === "medium" ? 150 : 80),
+    };
 
+    // Generate a random number of interpolation points between 1 and 5 for hard difficulty
+    const numTopInterp = difficulty === "hard" ? Math.floor(Math.random() * 5) + 1 : Math.floor(Math.random() * 3) + 1;
+    const numBottomInterp = difficulty === "hard" ? Math.floor(Math.random() * 5) + 1 : Math.floor(Math.random() * 3) + 1;
 
-    // Create an array of points for the Bezier curve
+    // Generate interpolated points
+    const topInterp = generateInterpolatedPoints(aboveRoad, aboveSpot, numTopInterp, difficulty);
+    const bottomInterp = generateInterpolatedPoints(belowSpot, belowRoad, numBottomInterp, difficulty);
 
-    const beforeTopInterp = [
-        { x: topRightCornerRoad.x, y: topRightCornerRoad.y },
-        { x: aboveRoad.x, y: aboveRoad.y },
-        
-    ];
-
-
-    const MidInterp = [
-        { x: aboveSpot.x, y: aboveSpot.y },
-        { x: belowSpot.x, y: belowSpot.y },
-        
-    ];
-
-    const afterBottomInterp = [
-        { x: belowRoad.x, y: belowRoad.y },
-        { x: topRightCornerRoad.x, y: topRightCornerRoad.y },
-        
-    ];
-
-
+    // Combine all points to form the load shape
     const points = [
-        { x: bottomRightCornerRoad.x, y: bottomRightCornerRoad.y },
-        { x: aboveRoad.x, y: aboveRoad.y },
-        { x: aboveSpot.x, y: aboveSpot.y },
-        { x: belowSpot.x, y: belowSpot.y },
-        { x: belowRoad.x, y: belowRoad.y },
-        { x: topRightCornerRoad.x, y: topRightCornerRoad.y },
-        
+        topRightCornerRoad, // Top right of the road
+        aboveRoad,          // Above the road
+        ...topInterp,       // Interpolated points between aboveRoad and aboveSpot
+        aboveSpot,          // Above the spot
+        belowSpot,          // Below the spot
+        ...bottomInterp,    // Interpolated points between belowSpot and belowRoad
+        belowRoad,          // Below the road
+        bottomRightCornerRoadPoint, // Bottom right of the road
     ];
-   
-    // return before top + top interp + mid interp + bottom interp + after bottom
+
     return points;
 }
 

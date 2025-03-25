@@ -17,6 +17,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const toggleBtn = document.getElementById("toggle-btn");
     const drawLinesBtn = document.getElementById("draw-lines-btn");
     const simulateBtn = document.getElementById("simulate-btn"); // New button
+    const difficultyBtn = document.getElementById("difficulty-btn"); // New button
     let visualToggle = false; // State to track whether visuals are displayed
 
     // High-quality canvas rendering
@@ -40,6 +41,18 @@ document.addEventListener("DOMContentLoaded", () => {
 
     let spline = null; // Initialize spline variable
     let difficulty = "easy"; // Default difficulty
+
+    // Generate the load shape on page load
+    const angle = road.angle * (Math.PI / 180);
+    const halfWidth = 30;
+    const halfHeight = 50;
+
+    const bottomRightCornerRoad = {
+        x: road.x + halfWidth * Math.cos(angle) + halfHeight * Math.sin(angle),
+        y: road.y + halfWidth * Math.sin(angle) - halfHeight * Math.cos(angle),
+    };
+
+    loadShapePoints = generateLoadShape(road, bottomRightCornerRoad, spot, canvas.width / scale, canvas.height / scale, difficulty);
 
     function updateToggleButton() {
         toggleBtn.textContent =
@@ -180,6 +193,23 @@ document.addEventListener("DOMContentLoaded", () => {
         scheduler(ctx, spotToExitCurve, exitToExitCurve, cuspToSpotCurve, cuspToSpotOutline);
     });
 
+    difficultyBtn.addEventListener("click", () => {
+        // Toggle difficulty levels
+        if (difficulty === "easy") {
+            difficulty = "medium";
+        } else if (difficulty === "medium") {
+            difficulty = "hard";
+        } else {
+            difficulty = "easy";
+        }
+
+        // Update button text to reflect the current difficulty
+        difficultyBtn.textContent = `Difficulty: ${difficulty.charAt(0).toUpperCase() + difficulty.slice(1)}`;
+
+        console.log(`Difficulty set to: ${difficulty}`);
+        regenerateBtn.click(); // Regenerate the load shape with the new difficulty
+    });
+
     function scheduler(ctx, spotToExitCurve, exitToExitCurve, cuspToSpotCurve, cuspToSpotOutline) {
         kickAHT(ctx, spotToExitCurve, exitToExitCurve, cuspToSpotCurve, cuspToSpotOutline, () => {
             console.log("Kick AHT completed.");
@@ -248,29 +278,29 @@ document.addEventListener("DOMContentLoaded", () => {
 
         // Draw the load shape points
         if (loadShapePoints && loadShapePoints.length > 0) {
+            // Draw the solid black line first
             ctx.beginPath();
             ctx.moveTo(loadShapePoints[0].x, loadShapePoints[0].y);
             for (let i = 1; i < loadShapePoints.length; i++) {
                 ctx.lineTo(loadShapePoints[i].x, loadShapePoints[i].y);
             }
-            //ctx.lineTo(loadShapePoints[0].x, loadShapePoints[0].y); // Close the shape
-            ctx.strokeStyle = "black"; // Line color
-            ctx.lineWidth = 2; // Line thickness
+            ctx.strokeStyle = "gold"; // Solid black line
+            ctx.lineWidth = 2; // Slightly thicker for visibility
             ctx.stroke();
             ctx.closePath();
 
-            // Draw the points as circles
-            loadShapePoints.forEach((point, index) => {
-                ctx.beginPath();
-                ctx.arc(point.x, point.y, 5, 0, Math.PI * 2);
-                ctx.fillStyle = "red"; // Color for points
-                ctx.fill();
-                ctx.closePath();
-
-                ctx.font = "12px Arial";
-                ctx.fillStyle = "black";
-                ctx.fillText(`P${index + 1}`, point.x + 10, point.y - 10); // Label the points
-            });
+            // Draw the yellow dashed line on top
+            ctx.beginPath();
+            ctx.setLineDash([10, 5]); // Set line to be dashed
+            ctx.moveTo(loadShapePoints[0].x, loadShapePoints[0].y);
+            for (let i = 1; i < loadShapePoints.length; i++) {
+                ctx.lineTo(loadShapePoints[i].x, loadShapePoints[i].y);
+            }
+            ctx.strokeStyle = "black"; // Yellowy-gold dashed line
+            ctx.lineWidth = 2; // Slightly thinner than the black line
+            ctx.stroke();
+            ctx.setLineDash([]); // Reset line dash
+            ctx.closePath();
         } else {
             console.error("Load shape points are not defined or empty. Ensure they are generated before drawing.");
         }
@@ -281,9 +311,6 @@ document.addEventListener("DOMContentLoaded", () => {
             y: road.y - 50, // Assuming road height is 100, half of it is 50
         };
 
-       
-
-        
     }
 
     drawCanvas();
