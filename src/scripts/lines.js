@@ -21,7 +21,7 @@ function drawLines(ctx, lines) {
 }
 
 function createSpline(start, end, minRadius, segmentType) {
-    const controlDistance = Math.max(minRadius, 100); // Ensure minimum radius
+    const controlDistance = Math.max(minRadius, 100); // Ensure a minimum radius of 50px
 
     let startControlX, startControlY, endControlX, endControlY;
 
@@ -37,7 +37,93 @@ function createSpline(start, end, minRadius, segmentType) {
         endControlY = end.y + controlDistance * Math.sin(end.heading);
     }
 
-    return new Bezier(start.x, start.y, startControlX, startControlY, endControlX, endControlY, end.x, end.y);
+    let curve = new Bezier(start.x, start.y, startControlX, startControlY, endControlX, endControlY, end.x, end.y);
+
+    // Enforce minimum turning radius
+    curve = enforceMinimumRadius(curve, minRadius);
+
+    return curve;
+}
+
+function enforceMinimumRadius(curve, minRadius) {
+    const steps = 3000; // Number of steps to sample the curve
+    const controlPoints = curve.points;
+
+    for (let t = 0; t <= 1; t += 1 / steps) {
+        const radius = calculateRadiusOfCurvature(curve, t);
+        if (radius < minRadius) {
+            console.warn(`Radius of curvature (${radius}px) is below the minimum (${minRadius}px). Adjusting control points.`);
+
+            // Adjust control points to increase the radius of curvature
+            adjustControlPointsForRadius(curve, t, minRadius);
+        }
+    }
+
+    return curve;
+}
+
+function adjustControlPointsForRadius(curve, t, minRadius) {
+    const controlPoints = curve.points;
+
+    // Calculate the direction vectors for control point adjustments
+    const startToControl1 = {
+        x: controlPoints[1].x - controlPoints[0].x,
+        y: controlPoints[1].y - controlPoints[0].y,
+    };
+    const endToControl2 = {
+        x: controlPoints[2].x - controlPoints[3].x,
+        y: controlPoints[2].y - controlPoints[3].y,
+    };
+
+    // Normalize the direction vectors
+    const startToControl1Length = Math.sqrt(startToControl1.x ** 2 + startToControl1.y ** 2);
+    const endToControl2Length = Math.sqrt(endToControl2.x ** 2 + endToControl2.y ** 2);
+
+    const normalizedStartToControl1 = {
+        x: startToControl1.x / startToControl1Length,
+        y: startToControl1.y / startToControl1Length,
+    };
+    const normalizedEndToControl2 = {
+        x: endToControl2.x / endToControl2Length,
+        y: endToControl2.y / endToControl2Length,
+    };
+
+    // Scale the control points outward to increase the radius of curvature
+    const adjustmentFactor = minRadius / calculateRadiusOfCurvature(curve, t);
+
+    controlPoints[1].x += normalizedStartToControl1.x * adjustmentFactor;
+    controlPoints[1].y += normalizedStartToControl1.y * adjustmentFactor;
+
+    controlPoints[2].x += normalizedEndToControl2.x * adjustmentFactor;
+    controlPoints[2].y += normalizedEndToControl2.y * adjustmentFactor;
+
+    // Update the curve with the adjusted control points
+    curve = new Bezier(...controlPoints);
+}
+
+function calculateRadiusOfCurvature(curve, t) {
+    const d1 = curve.derivative(t); // First derivative
+    const d2 = curve.derivative(t, 2); // Second derivative
+
+    const numerator = Math.pow(d1.x ** 2 + d1.y ** 2, 1.5);
+    const denominator = Math.abs(d1.x * d2.y - d1.y * d2.x);
+
+    if (denominator === 0) return Infinity; // Straight line
+    return numerator / denominator;
+}
+
+function adjustControlPoints(curve, t, minRadius) {
+    // Adjust control points to increase the radius of curvature
+    const controlPoints = curve.points;
+
+    // Example adjustment logic: scale control points outward
+    const scaleFactor = minRadius / calculateRadiusOfCurvature(curve, t);
+    controlPoints[1].x *= scaleFactor;
+    controlPoints[1].y *= scaleFactor;
+    controlPoints[2].x *= scaleFactor;
+    controlPoints[2].y *= scaleFactor;
+
+    curve.update(); // Update the curve with new control points
 }
 
 function drawCurve(ctx, curve) {
@@ -114,7 +200,7 @@ function drawSplines(ctx, points, minRadius, drawOutlines = false) {
             drawCurve(ctx, curve);
 
             // Generate and save outline lines
-            const offset = 50; // Offset distance for the outline lines
+            const offset = 20; // Offset distance for the outline lines
             const leftOutline = [];
             const rightOutline = [];
 

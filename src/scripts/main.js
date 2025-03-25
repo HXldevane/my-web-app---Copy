@@ -1,5 +1,5 @@
 import { drawSplines } from "./lines.js";
-import { generateRandomRoad, drawRoad } from "./road.js";
+import { generateAllRoadPoints, drawRoad } from "./road.js";
 import { generateSpot, drawSpot } from "./spot.js";
 import { initializePoints, resetPoints } from "./points.js";
 import { Bezier } from "bezier-js"; // Correct import
@@ -27,37 +27,15 @@ document.addEventListener("DOMContentLoaded", () => {
     ctx.scale(scale, scale);
 
     const points = initializePoints();
-    let roadEntry = null;
-    let roadExit = null;
     let selectedPointIndex = null;
     let mode = "adjust-position";
     const minRadius = 50;
 
-    let road = generateRandomRoad(canvas.height);
+    // Generate all road points
+    let { road, roadEntry, roadExit } = generateAllRoadPoints(canvas.height);
+
     let spot = generateSpot(canvas.width, canvas.height);
     points[2] = { ...spot, name: "Spot" };
-
-    function placeRoadPoints() {
-        const roadWidth = 80;
-        const roadHeight = 200;
-        const roadQuarterHeight = roadHeight / 4;
-        const roadCenterX = road.x;
-
-        roadEntry = {
-            name: "Road Entry",
-            x: roadCenterX,
-            y: road.y - roadHeight / 2 + roadQuarterHeight,
-            heading: road.angle * (Math.PI / 180),
-        };
-        roadExit = {
-            name: "Road Exit",
-            x: roadCenterX,
-            y: road.y + roadHeight / 2 - roadQuarterHeight,
-            heading: (road.angle + 180) * (Math.PI / 180),
-        };
-    }
-
-    placeRoadPoints();
 
     function updateToggleButton() {
         toggleBtn.textContent =
@@ -136,10 +114,9 @@ document.addEventListener("DOMContentLoaded", () => {
         resetPoints(points);
         selectedPointIndex = null;
         console.log("Canvas regenerated. All points reset.");
-        road = generateRandomRoad(canvas.height);
+        ({ road, roadEntry, roadExit } = generateAllRoadPoints(canvas.height)); // Regenerate all road points
         spot = generateSpot(canvas.width, canvas.height);
         points[2] = { ...spot, name: "Spot" };
-        placeRoadPoints();
         window.curves = null; // Clear previous curves to ensure new paths are used
         kickedBeenOnYellow = false; // Reset the been-on-yellow flag
         drawCanvas();
