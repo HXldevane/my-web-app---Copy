@@ -103,6 +103,7 @@ function drawSplines(ctx, points, minRadius, drawOutlines = false) {
     ];
 
     const curves = []; // Array to store the created curves
+    const outlines = []; // Array to store the left and right outlines
 
     segments.forEach((segment) => {
         if (segment.start.x !== null && segment.end.x !== null) {
@@ -113,23 +114,26 @@ function drawSplines(ctx, points, minRadius, drawOutlines = false) {
             // Always draw the dashed, light blue curve
             drawCurve(ctx, curve);
 
+            // Generate and save outline lines
+            const offset = 50; // Offset distance for the outline lines
+            const leftOutline = [];
+            const rightOutline = [];
+
+            for (let t = 0; t <= 1; t += 0.01) {
+                const point = curve.get(t);
+                const normal = curve.normal(t); // Get the normal vector at t
+                const offsetX = normal.x * offset;
+                const offsetY = normal.y * offset;
+
+                // Calculate left and right outline points
+                leftOutline.push({ x: point.x - offsetX, y: point.y - offsetY });
+                rightOutline.push({ x: point.x + offsetX, y: point.y + offsetY });
+            }
+
+            outlines.push({ type: segment.type, left: leftOutline, right: rightOutline });
+
             // Conditionally draw outline lines
             if (drawOutlines) {
-                const offset = 50; // Offset distance for the outline lines
-                const leftOutline = [];
-                const rightOutline = [];
-
-                for (let t = 0; t <= 1; t += 0.01) {
-                    const point = curve.get(t);
-                    const normal = curve.normal(t); // Get the normal vector at t
-                    const offsetX = normal.x * offset;
-                    const offsetY = normal.y * offset;
-
-                    // Calculate left and right outline points
-                    leftOutline.push({ x: point.x - offsetX, y: point.y - offsetY });
-                    rightOutline.push({ x: point.x + offsetX, y: point.y + offsetY });
-                }
-
                 // Draw the left outline
                 ctx.beginPath();
                 ctx.moveTo(leftOutline[0].x, leftOutline[0].y);
@@ -155,7 +159,7 @@ function drawSplines(ctx, points, minRadius, drawOutlines = false) {
         }
     });
 
-    return curves; // Return the array of curves
+    return { curves, outlines }; // Return both curves and outlines
 }
 
 export { drawSplines };

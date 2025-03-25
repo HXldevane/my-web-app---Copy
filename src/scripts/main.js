@@ -147,7 +147,11 @@ document.addEventListener("DOMContentLoaded", () => {
         if (points.every((point, index) => (index === 2 || (point.x !== null && point.y !== null)))) {
             console.log("Drawing splines and shape outlines...");
             const allPoints = [roadEntry, points[0], points[1], points[2], points[3], roadExit];
-            drawSplines(ctx, allPoints, minRadius, true); // Pass true to draw outlines
+            const { curves, outlines } = drawSplines(ctx, allPoints, minRadius, true); // Pass true to draw outlines
+
+            // Find and plot intersections
+            const intersections = findIntersections(outlines, ctx);
+            console.log("Intersections:", intersections);
         } else {
             console.log("Please place all points before drawing lines.");
         }
