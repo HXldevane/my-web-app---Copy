@@ -46,8 +46,25 @@ function drawRoad(ctx, road) {
     ctx.save();
     ctx.translate(road.x, road.y);
     ctx.rotate((road.angle * Math.PI) / 180); // Convert angle to radians
-    ctx.fillStyle = "gray";
-    ctx.fillRect(-halfWidth, -halfHeight, width, height);
+
+    // Draw the road background (light grey towards white)
+    ctx.fillStyle = "#f2f2f2"; // Light grey color
+    ctx.fillRect(-halfWidth-200, -halfHeight, width+200, height);
+
+    // Draw the grey border
+    ctx.strokeStyle = "grey"; // Grey border
+    ctx.lineWidth = 2;
+    ctx.strokeRect(-halfWidth-200, -halfHeight, width+200, height);
+
+    // Draw the gold line across the middle
+    ctx.beginPath();
+    ctx.moveTo(-halfWidth-200, 0); // Start at the left edge of the road
+    ctx.lineTo(halfWidth, 0); // End at the right edge of the road
+    ctx.strokeStyle = "gold"; // gold line
+    ctx.lineWidth = 2;
+    ctx.stroke();
+    ctx.closePath();
+
     ctx.restore();
 }
 
