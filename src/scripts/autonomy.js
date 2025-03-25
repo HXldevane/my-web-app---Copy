@@ -10,7 +10,7 @@ function easeInOutQuad(t) {
 
 function kickAHT(ctx, spotToExitCurve, exitToExitCurve, cuspToSpotCurve, cuspToSpotOutline, onComplete) {
     const speed = 30; // Speed in pixels per second
-    const totalLength = spotToExitCurve.length() + exitToExitCurve.length();
+    const totalLength = spotToExitCurve.length(); // Only the spot-to-exit curve is used
     const totalDuration = (totalLength / speed) * 1000; // Total time in milliseconds
     const startTime = performance.now();
 
@@ -19,17 +19,8 @@ function kickAHT(ctx, spotToExitCurve, exitToExitCurve, cuspToSpotCurve, cuspToS
         const t = Math.min(elapsed / totalDuration, 1); // Normalize time to [0, 1]
         const easedT = easeInOutQuad(t); // Apply easing for acceleration and deceleration
 
-        let currentPosition;
-
         // Calculate position on spot-to-exit curve
-        if (easedT <= spotToExitCurve.length() / totalLength) {
-            const spotToExitT = easedT / (spotToExitCurve.length() / totalLength); // Map easedT to [0, 1] for spot-to-exit
-            currentPosition = spotToExitCurve.get(spotToExitT);
-        } else {
-            // Calculate position on exit-to-exit curve
-            const exitToExitT = (easedT - spotToExitCurve.length() / totalLength) / (exitToExitCurve.length() / totalLength); // Map easedT to [0, 1] for exit-to-exit
-            currentPosition = exitToExitCurve.get(exitToExitT);
-        }
+        const currentPosition = spotToExitCurve.get(easedT);
 
         // Draw the kicking truck's semi-transparent dot
         drawDot(ctx, currentPosition.x, currentPosition.y, "rgba(255, 0, 0, 0.5)");
@@ -128,7 +119,7 @@ function callAHT(ctx, cuspToSpotCurve, onComplete) {
     callAnimationId = requestAnimationFrame(animate);
 }
 
-function scheduler(ctx, cuspToSpotCurve, spotToExitCurve, exitToExitCurve) {
+function scheduler(ctx, cuspToSpotCurve, spotToExitCurve, exitToExitCurve, cuspToSpotOutline) {
     kickAHT(ctx, spotToExitCurve, exitToExitCurve, cuspToSpotCurve, cuspToSpotOutline, () => {
         console.log("Kick AHT completed.");
     });

@@ -1,5 +1,5 @@
 import { drawSplines } from "./lines.js";
-import { generateAllRoadPoints, drawRoad } from "./road.js";
+import { generateAllRoadPoints, drawRoad, generateLoadShape } from "./road.js"; // Updated imports
 import { generateSpot, drawSpot } from "./spot.js";
 import { initializePoints, resetPoints } from "./points.js";
 import { Bezier } from "bezier-js"; // Correct import
@@ -7,6 +7,7 @@ import { findIntersections } from "./calculate.js"; // Import the new function
 import { stopAnimations, kickAHT, callAHT, scheduler } from "./autonomy.js"; // Import scheduler function
 
 let kickedBeenOnYellow = false; // Define as a global variable
+let loadShapePoints = null; // Define globally to ensure it is accessible in drawCanvas
 
 document.addEventListener("DOMContentLoaded", () => {
     const canvas = document.getElementById("canvas");
@@ -36,6 +37,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
     let spot = generateSpot(canvas.width, canvas.height);
     points[2] = { ...spot, name: "Spot" };
+
+    let spline = null; // Initialize spline variable
+    let difficulty = "easy"; // Default difficulty
 
     function updateToggleButton() {
         toggleBtn.textContent =
@@ -117,9 +121,21 @@ document.addEventListener("DOMContentLoaded", () => {
         ({ road, roadEntry, roadExit } = generateAllRoadPoints(canvas.height)); // Regenerate all road points
         spot = generateSpot(canvas.width, canvas.height);
         points[2] = { ...spot, name: "Spot" };
-        window.curves = null; // Clear previous curves to ensure new paths are used
-        kickedBeenOnYellow = false; // Reset the been-on-yellow flag
-        drawCanvas();
+
+        // Calculate bottomRightCornerRoad dynamically considering the road's rotation angle
+        const angle = road.angle * (Math.PI / 180); // Convert angle to radians
+        const halfWidth = 30; // Half of the road width (60 / 2)
+        const halfHeight = 50; // Half of the road height (100 / 2)
+
+        const bottomRightCornerRoad = {
+            x: road.x + halfWidth * Math.cos(angle) + halfHeight * Math.sin(angle),
+            y: road.y + halfWidth * Math.sin(angle) - halfHeight * Math.cos(angle),
+        };
+
+        // Generate the points from generateLoadShape and store them globally
+        loadShapePoints = generateLoadShape(road, bottomRightCornerRoad, spot, canvas.width / scale, canvas.height / scale, difficulty);
+
+        drawCanvas(); // Ensure the canvas is updated after regenerating
     });
 
     clearLinesBtn.addEventListener("click", () => {
@@ -173,9 +189,9 @@ document.addEventListener("DOMContentLoaded", () => {
     function drawCanvas() {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-        drawRoad(ctx, road);
-        drawSpot(ctx, spot);
-        
+        drawRoad(ctx, road); // Plot the road
+        drawSpot(ctx, spot); // Plot the spot
+
         [roadEntry, roadExit].forEach((point) => {
             ctx.beginPath();
             ctx.arc(point.x, point.y, 5, 0, Math.PI * 2);
@@ -229,6 +245,45 @@ document.addEventListener("DOMContentLoaded", () => {
         // Always draw the purple splines
         const allPoints = [roadEntry, points[0], points[1], points[2], points[3], roadExit];
         drawSplines(ctx, allPoints, minRadius); // Do not pass true to avoid drawing outlines
+
+        // Draw the load shape points
+        if (loadShapePoints && loadShapePoints.length > 0) {
+            ctx.beginPath();
+            ctx.moveTo(loadShapePoints[0].x, loadShapePoints[0].y);
+            for (let i = 1; i < loadShapePoints.length; i++) {
+                ctx.lineTo(loadShapePoints[i].x, loadShapePoints[i].y);
+            }
+            //ctx.lineTo(loadShapePoints[0].x, loadShapePoints[0].y); // Close the shape
+            ctx.strokeStyle = "black"; // Line color
+            ctx.lineWidth = 2; // Line thickness
+            ctx.stroke();
+            ctx.closePath();
+
+            // Draw the points as circles
+            loadShapePoints.forEach((point, index) => {
+                ctx.beginPath();
+                ctx.arc(point.x, point.y, 5, 0, Math.PI * 2);
+                ctx.fillStyle = "red"; // Color for points
+                ctx.fill();
+                ctx.closePath();
+
+                ctx.font = "12px Arial";
+                ctx.fillStyle = "black";
+                ctx.fillText(`P${index + 1}`, point.x + 10, point.y - 10); // Label the points
+            });
+        } else {
+            console.error("Load shape points are not defined or empty. Ensure they are generated before drawing.");
+        }
+
+        // Plot the topRightCornerRoad point
+        const topRightCornerRoad = {
+            x: road.x + 30, // Assuming road width is 60, half of it is 30
+            y: road.y - 50, // Assuming road height is 100, half of it is 50
+        };
+
+       
+
+        
     }
 
     drawCanvas();
