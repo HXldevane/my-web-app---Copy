@@ -139,19 +139,16 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 
     clearLinesBtn.addEventListener("click", () => {
-        console.log("Clearing splines...");
-        drawCanvas();
+        console.log("Clearing splines and shading...");
+        drawCanvas(); // Redraw the canvas without outlines, overlap, or shading
     });
 
     drawLinesBtn.addEventListener("click", () => {
         if (points.every((point, index) => (index === 2 || (point.x !== null && point.y !== null)))) {
-            console.log("Drawing splines and shape outlines...");
+            console.log("Drawing splines and highlighting 'cusp-to-spot-opposite' shape...");
             const allPoints = [roadEntry, points[0], points[1], points[2], points[3], roadExit];
-            const { curves, outlines } = drawSplines(ctx, allPoints, minRadius, true); // Pass true to draw outlines
-
-            // Find and plot intersections
-            const intersections = findIntersections(outlines, ctx);
-            console.log("Intersections:", intersections);
+            const { outlines } = drawSplines(ctx, allPoints, minRadius, true); // Extract outlines
+            findIntersections(outlines, ctx); // Highlight the "cusp-to-spot-opposite" shape
         } else {
             console.log("Please place all points before drawing lines.");
         }

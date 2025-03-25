@@ -107,7 +107,6 @@ function drawSplines(ctx, points, minRadius, drawOutlines = false) {
 
     segments.forEach((segment) => {
         if (segment.start.x !== null && segment.end.x !== null) {
-            console.log(`Processing segment: ${segment.type}`);
             const curve = createSpline(segment.start, segment.end, minRadius, segment.type);
             curves.push({ type: segment.type, curve }); // Save the curve with its type
 
