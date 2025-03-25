@@ -4,6 +4,10 @@ let kickAnimationId = null;
 let callAnimationId = null;
 let callAHTTriggered = false;
 
+function easeInOutQuad(t) {
+    return t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
+}
+
 function kickAHT(ctx, spotToExitCurve, exitToExitCurve, cuspToSpotCurve, cuspToSpotOutline, onComplete) {
     const speed = 30; // Speed in pixels per second
     const totalLength = spotToExitCurve.length() + exitToExitCurve.length();
@@ -13,16 +17,17 @@ function kickAHT(ctx, spotToExitCurve, exitToExitCurve, cuspToSpotCurve, cuspToS
     function animate(time) {
         const elapsed = time - startTime;
         const t = Math.min(elapsed / totalDuration, 1); // Normalize time to [0, 1]
+        const easedT = easeInOutQuad(t); // Apply easing for acceleration and deceleration
 
         let currentPosition;
 
         // Calculate position on spot-to-exit curve
-        if (t <= spotToExitCurve.length() / totalLength) {
-            const spotToExitT = t / (spotToExitCurve.length() / totalLength); // Map t to [0, 1] for spot-to-exit
+        if (easedT <= spotToExitCurve.length() / totalLength) {
+            const spotToExitT = easedT / (spotToExitCurve.length() / totalLength); // Map easedT to [0, 1] for spot-to-exit
             currentPosition = spotToExitCurve.get(spotToExitT);
         } else {
             // Calculate position on exit-to-exit curve
-            const exitToExitT = (t - spotToExitCurve.length() / totalLength) / (exitToExitCurve.length() / totalLength); // Map t to [0, 1] for exit-to-exit
+            const exitToExitT = (easedT - spotToExitCurve.length() / totalLength) / (exitToExitCurve.length() / totalLength); // Map easedT to [0, 1] for exit-to-exit
             currentPosition = exitToExitCurve.get(exitToExitT);
         }
 
@@ -105,9 +110,10 @@ function callAHT(ctx, cuspToSpotCurve, onComplete) {
     function animate(time) {
         const elapsed = time - startTime;
         const t = Math.min(elapsed / totalDuration, 1); // Normalize time to [0, 1]
+        const easedT = easeInOutQuad(t); // Apply easing for acceleration and deceleration
 
         // Calculate position on cusp-to-spot curve
-        const position = cuspToSpotCurve.get(t);
+        const position = cuspToSpotCurve.get(easedT);
 
         // Draw the called truck's semi-transparent dot
         drawDot(ctx, position.x, position.y, "rgba(0, 0, 255, 0.5)");
