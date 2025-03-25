@@ -28,6 +28,10 @@ document.addEventListener("DOMContentLoaded", () => {
     canvas.style.height = "600px";
     ctx.scale(scale, scale);
 
+    // Set the canvas background to a very, very light grey
+    ctx.fillStyle = "#f9f9f9"; // Very light grey
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
     const points = initializePoints();
     let selectedPointIndex = null;
     let mode = "adjust-position";
@@ -217,34 +221,16 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     function drawCanvas() {
+        // Clear the canvas and set the background to very light grey
         ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = "#f9f9f9"; // Very light grey
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-        drawRoad(ctx, road); // Plot the road
+        // Pass roadEntry and roadExit to drawRoad
+        drawRoad(ctx, road, roadEntry, roadExit); // Plot the road
         drawSpot(ctx, spot); // Plot the spot
 
-        [roadEntry, roadExit].forEach((point) => {
-            ctx.beginPath();
-            ctx.arc(point.x, point.y, 5, 0, Math.PI * 2);
-            ctx.fillStyle = "orange";
-            ctx.fill();
-            ctx.closePath();
-
-            const arrowLength = 30;
-            const arrowX = point.x + arrowLength * Math.cos(point.heading);
-            const arrowY = point.y + arrowLength * Math.sin(point.heading);
-
-            ctx.beginPath();
-            ctx.moveTo(point.x, point.y);
-            ctx.lineTo(arrowX, arrowY);
-            ctx.strokeStyle = "blue";
-            ctx.lineWidth = 2;
-            ctx.stroke();
-            ctx.closePath();
-
-            ctx.font = "12px Arial";
-            ctx.fillStyle = "black";
-            ctx.fillText(point.name, point.x + 10, point.y - 10);
-        });
+        
 
         points.forEach((point, index) => {
             if (point.x !== null && point.y !== null) {
@@ -276,15 +262,46 @@ document.addEventListener("DOMContentLoaded", () => {
         const allPoints = [roadEntry, points[0], points[1], points[2], points[3], roadExit];
         drawSplines(ctx, allPoints, minRadius); // Do not pass true to avoid drawing outlines
 
-        // Draw the load shape points
+        // Fill the load shape area with a more transparent yellow background and closer grey dot pattern
         if (loadShapePoints && loadShapePoints.length > 0) {
+            // Create a pattern for the grey dots
+            const patternCanvas = document.createElement("canvas");
+            patternCanvas.width = 3; // Smaller grid for closer dots
+            patternCanvas.height = 3;
+            const patternCtx = patternCanvas.getContext("2d");
+
+            // Draw the grey dots on a transparent background
+            patternCtx.fillStyle = "rgba(0, 0, 0, 0.5)"; // Semi-transparent grey dots
+            patternCtx.beginPath();
+            patternCtx.arc(3, 3, 1, 0, Math.PI * 2); // Smaller dots
+            patternCtx.fill();
+            patternCtx.closePath();
+
+            const pattern = ctx.createPattern(patternCanvas, "repeat");
+
+            // Fill the load shape with the more transparent yellow background
+            ctx.save();
+            ctx.beginPath();
+            ctx.moveTo(loadShapePoints[0].x, loadShapePoints[0].y);
+            for (let i = 1; i < loadShapePoints.length; i++) {
+                ctx.lineTo(loadShapePoints[i].x, loadShapePoints[i].y);
+            }
+            ctx.closePath();
+            ctx.fillStyle = "rgba(255, 255, 0, 0.1)"; // More transparent yellow
+            ctx.fill();
+
+            // Overlay the closer grey dot pattern
+            ctx.fillStyle = pattern;
+            ctx.fill();
+            ctx.restore();
+
             // Draw the solid black line first
             ctx.beginPath();
             ctx.moveTo(loadShapePoints[0].x, loadShapePoints[0].y);
             for (let i = 1; i < loadShapePoints.length; i++) {
                 ctx.lineTo(loadShapePoints[i].x, loadShapePoints[i].y);
             }
-            ctx.strokeStyle = "gold"; // Solid black line
+            ctx.strokeStyle = "black"; // Solid black line
             ctx.lineWidth = 2; // Slightly thicker for visibility
             ctx.stroke();
             ctx.closePath();
@@ -296,7 +313,7 @@ document.addEventListener("DOMContentLoaded", () => {
             for (let i = 1; i < loadShapePoints.length; i++) {
                 ctx.lineTo(loadShapePoints[i].x, loadShapePoints[i].y);
             }
-            ctx.strokeStyle = "black"; // Yellowy-gold dashed line
+            ctx.strokeStyle = "gold"; // Yellowy-gold dashed line
             ctx.lineWidth = 2; // Slightly thinner than the black line
             ctx.stroke();
             ctx.setLineDash([]); // Reset line dash

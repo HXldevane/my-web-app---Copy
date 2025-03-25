@@ -134,50 +134,13 @@ function drawCurve(ctx, curve) {
         const point = curve.get(t);
         ctx.lineTo(point.x, point.y);
     }
-    ctx.strokeStyle = "blue"; // Light blue color
-    ctx.lineWidth = 1;
+    ctx.strokeStyle = "gray"; // Light blue color
+    ctx.lineWidth = 2;
     ctx.stroke();
     ctx.setLineDash([]); // Reset line dash
     ctx.closePath();
 }
 
-function drawCurveOutline(ctx, curve, width) {
-    const outlinePointsLeft = [];
-    const outlinePointsRight = [];
-
-    for (let t = 0; t <= 1; t += 0.01) {
-        const point = curve.get(t);
-        const normal = curve.normal(t); // Get the normal vector at t
-        const offsetX = normal.x * width;
-        const offsetY = normal.y * width;
-
-        // Calculate left and right outline points
-        outlinePointsLeft.push({ x: point.x - offsetX, y: point.y - offsetY });
-        outlinePointsRight.push({ x: point.x + offsetX, y: point.y + offsetY });
-    }
-
-    // Draw the left outline
-    ctx.beginPath();
-    ctx.moveTo(outlinePointsLeft[0].x, outlinePointsLeft[0].y);
-    outlinePointsLeft.forEach((point) => {
-        ctx.lineTo(point.x, point.y);
-    });
-    ctx.strokeStyle = "rgba(0, 0, 255, 0.5)"; // Semi-transparent blue
-    ctx.lineWidth = 1;
-    ctx.stroke();
-    ctx.closePath();
-
-    // Draw the right outline
-    ctx.beginPath();
-    ctx.moveTo(outlinePointsRight[0].x, outlinePointsRight[0].y);
-    outlinePointsRight.forEach((point) => {
-        ctx.lineTo(point.x, point.y);
-    });
-    ctx.strokeStyle = "rgba(0, 0, 255, 0.5)"; // Semi-transparent blue
-    ctx.lineWidth = 1;
-    ctx.stroke();
-    ctx.closePath();
-}
 
 function drawSplines(ctx, points, minRadius, drawOutlines = false) {
     const segments = [
@@ -225,7 +188,7 @@ function drawSplines(ctx, points, minRadius, drawOutlines = false) {
                 leftOutline.forEach((point) => {
                     ctx.lineTo(point.x, point.y);
                 });
-                ctx.strokeStyle = "rgba(0, 0, 255, 0.5)"; // Semi-transparent blue
+                ctx.strokeStyle = "rgba(52, 52, 54, 0.5)"; // Semi-transparent blue
                 ctx.lineWidth = 1;
                 ctx.stroke();
                 ctx.closePath();
@@ -236,7 +199,7 @@ function drawSplines(ctx, points, minRadius, drawOutlines = false) {
                 rightOutline.forEach((point) => {
                     ctx.lineTo(point.x, point.y);
                 });
-                ctx.strokeStyle = "rgba(0, 0, 255, 0.5)"; // Semi-transparent blue
+                ctx.strokeStyle = "rgba(52, 52, 54, 0.5)"; // Semi-transparent blue
                 ctx.lineWidth = 1;
                 ctx.stroke();
                 ctx.closePath();
