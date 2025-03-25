@@ -36,7 +36,7 @@ document.addEventListener("DOMContentLoaded", () => {
     // Generate all road points
     let { road, roadEntry, roadExit } = generateAllRoadPoints(canvas.height, scale);
 
-    let spot = generateSpot(canvas.width, canvas.height);
+    let spot = generateSpot(canvas.width, canvas.height, scale);
     points[2] = { ...spot, name: "Spot" };
 
     let spline = null; // Initialize spline variable
@@ -132,7 +132,7 @@ document.addEventListener("DOMContentLoaded", () => {
         selectedPointIndex = null;
         console.log("Canvas regenerated. All points reset.");
         ({ road, roadEntry, roadExit } = generateAllRoadPoints(canvas.height, scale)); // Regenerate all road points
-        spot = generateSpot(canvas.width, canvas.height);
+        spot = generateSpot(canvas.width, canvas.height, scale);
         points[2] = { ...spot, name: "Spot" };
 
         // Calculate bottomRightCornerRoad dynamically considering the road's rotation angle
