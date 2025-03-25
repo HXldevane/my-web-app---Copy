@@ -28,8 +28,8 @@ function findIntersections(outlines, ctx) {
 
     const intersections = [];
 
-    // Helper function to check intersections between two outline sides
-    function checkOutlineIntersections(side1, side2) {
+    // Helper function to check intersections and draw connecting lines
+    function checkOutlineIntersections(side1, side2, outlineLeft, outlineRight) {
         for (let i = 0; i < side1.length - 1; i++) {
             for (let j = 0; j < side2.length - 1; j++) {
                 const line1 = { start: side1[i], end: side1[i + 1] };
@@ -37,12 +37,27 @@ function findIntersections(outlines, ctx) {
 
                 const intersection = getLineIntersection(line1, line2);
                 if (intersection) {
-                    // Draw intersection point
+                    // Draw intersection point on the outline
                     ctx.beginPath();
                     ctx.arc(intersection.x, intersection.y, 5, 0, Math.PI * 2);
                     ctx.fillStyle = "green";
                     ctx.fill();
                     ctx.closePath();
+
+                    // Find the closest points on the left and right outlines
+                    const leftPoint = findClosestPoint(intersection, outlineLeft);
+                    const rightPoint = findClosestPoint(intersection, outlineRight);
+
+                    if (leftPoint && rightPoint) {
+                        // Draw a line connecting the left and right outlines
+                        ctx.beginPath();
+                        ctx.moveTo(leftPoint.x, leftPoint.y);
+                        ctx.lineTo(rightPoint.x, rightPoint.y);
+                        ctx.strokeStyle = "orange";
+                        ctx.lineWidth = 1;
+                        ctx.stroke();
+                        ctx.closePath();
+                    }
 
                     intersections.push(intersection);
                 }
@@ -50,13 +65,34 @@ function findIntersections(outlines, ctx) {
         }
     }
 
-    // Check intersections between cusp-to-spot and spot-to-exit
-    checkOutlineIntersections(cuspToSpot.left, spotToExit.left);
-    checkOutlineIntersections(cuspToSpot.right, spotToExit.right);
+    // Helper function to find the closest point on an outline to a given intersection
+    function findClosestPoint(intersection, outline) {
+        let closestPoint = null;
+        let minDistance = Infinity;
 
-    // Check intersections between cusp-to-spot and exit-to-exit
-    checkOutlineIntersections(cuspToSpot.left, exitToExit.left);
-    checkOutlineIntersections(cuspToSpot.right, exitToExit.right);
+        outline.forEach((point) => {
+            const distance = Math.sqrt(
+                (point.x - intersection.x) ** 2 + (point.y - intersection.y) ** 2
+            );
+            if (distance < minDistance) {
+                minDistance = distance;
+                closestPoint = point;
+            }
+        });
+
+        return closestPoint;
+    }
+
+    // Check all combinations of left and right sides
+    checkOutlineIntersections(cuspToSpot.left, spotToExit.left, spotToExit.left, spotToExit.right);
+    checkOutlineIntersections(cuspToSpot.left, spotToExit.right, spotToExit.left, spotToExit.right);
+    checkOutlineIntersections(cuspToSpot.right, spotToExit.left, spotToExit.left, spotToExit.right);
+    checkOutlineIntersections(cuspToSpot.right, spotToExit.right, spotToExit.left, spotToExit.right);
+
+    checkOutlineIntersections(cuspToSpot.left, exitToExit.left, exitToExit.left, exitToExit.right);
+    checkOutlineIntersections(cuspToSpot.left, exitToExit.right, exitToExit.left, exitToExit.right);
+    checkOutlineIntersections(cuspToSpot.right, exitToExit.left, exitToExit.left, exitToExit.right);
+    checkOutlineIntersections(cuspToSpot.right, exitToExit.right, exitToExit.left, exitToExit.right);
 
     if (intersections.length === 0) {
         console.log("No intersections detected between the specified outlines.");
