@@ -46,7 +46,7 @@ function createSpline(start, end, minRadius, segmentType) {
 }
 
 function enforceMinimumRadius(curve, minRadius) {
-    const steps = 3000; // Number of steps to sample the curve
+    const steps = 4; // Number of steps to sample the curve
     const controlPoints = curve.points;
 
     for (let t = 0; t <= 1; t += 1 / steps) {

@@ -23,14 +23,37 @@ function drawSpot(ctx, spot) {
     ctx.fill();
     ctx.closePath();
 
-    // Draw the gold circle around the dot
-    const circleRadius = 20; // Radius of the circle
+    // Draw the black circle outline around the dot
     ctx.beginPath();
-    ctx.arc(spot.x, spot.y, circleRadius, 0, Math.PI * 2);
-    ctx.strokeStyle = "gold";
+    ctx.arc(spot.x, spot.y, 10, 0, Math.PI * 2);
+    ctx.strokeStyle = "black"; // Black outline
     ctx.lineWidth = 2;
     ctx.stroke();
     ctx.closePath();
+
+    // Draw the black circle outline around the dot
+    const circleRadius = 15; // Radius of the circle
+    ctx.beginPath();
+    ctx.arc(spot.x, spot.y, 15, 0, Math.PI * 2);
+    ctx.strokeStyle = "gold"; // Black outline
+    ctx.lineWidth = 2;
+    ctx.stroke();
+    ctx.closePath();
+
+    // Draw the triangle aligned with the heading
+    const triangleSize = 10;
+    ctx.save();
+    ctx.translate(spot.x, spot.y); // Move to the spot's position
+    ctx.rotate(spot.heading + Math.PI / 2); // Adjust rotation to align correctly
+    ctx.beginPath();
+    ctx.moveTo(0, -circleRadius - triangleSize - 2); // Tip of the triangle
+    ctx.lineTo(-triangleSize / 2, -circleRadius - 2); // Left corner
+    ctx.lineTo(triangleSize / 2, -circleRadius - 2); // Right corner
+    ctx.closePath();
+    ctx.strokeStyle = "black"; // Black outline
+    ctx.lineWidth = 2;
+    ctx.stroke();
+    ctx.restore();
 }
 
 export { generateSpot, drawSpot };

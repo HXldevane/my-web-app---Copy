@@ -1,8 +1,7 @@
 import { Bezier } from "bezier-js"; // Ensure Bezier is imported
 
 
-const BucketPass = 45;
-const truckBuckets = 4;
+
 
 // Function to calculate the pixel length of the path
 function calculatePathLength(pathPoints, scale) {
@@ -55,6 +54,13 @@ function calculateTimeForDistance(distance, acceleration, deceleration, maxSpeed
     return accelTime + cruiseTime + decelTime; // Total time
 }
 
+// Function to calculate Tonnes per Hour
+function calculateTonnesPerHour(spotTime) {
+    const effectiveTime = Math.max(135 + spotTime, 180); // Max of 135 + spotTime or 180
+    const tonnesPerHour = (3600 / effectiveTime) * 250; // Calculate Tonnes per Hour
+    return tonnesPerHour;
+}
+
 // Function to evaluate user performance
 function userPerformance(curves, cuspOutlines, scale, ctx) {
     const exitLength = exitPathLength(curves, scale);
@@ -71,9 +77,9 @@ function userPerformance(curves, cuspOutlines, scale, ctx) {
     const loadedDeceleration = 2 / 3.6; // m/s² -> kphh
     const maxForwardSpeed = 30 / 3.6; // m/s -> kph
 
-    const reverseAcceleration = 2 / 3.6; // m/s² -> kphh
-    const reverseDeceleration = 2 / 3.6; // m/s² -> kphh
-    const maxReverseSpeed = 10 / 3.6; // m/s -> kph
+    const reverseAcceleration = 1 / 3.6; // m/s² -> kphh
+    const reverseDeceleration = 1 / 3.6; // m/s² -> kphh
+    const maxReverseSpeed = 12 / 3.6; // m/s -> kph
 
     // Calculate and log time for each path
     const exitTime = calculateTimeForDistance(exitLength, loadedAcceleration, 0, maxForwardSpeed);
@@ -86,18 +92,21 @@ function userPerformance(curves, cuspOutlines, scale, ctx) {
     const totalTime = exitTime + queueTime + cuspTime + cuspWaitTime + queueWaitTime;
     const spotTime = cuspTime + cuspWaitTime;
 
+    const tonnesPerHour = calculateTonnesPerHour(spotTime); // Calculate Tonnes per Hour
+
     console.log(`Total Time: ${totalTime.toFixed(2)} seconds`);
     console.log(`Spot Time: ${spotTime.toFixed(2)} seconds`);
     console.log(`Exit Time: ${exitTime.toFixed(2)} seconds`);
     console.log(`Queue Time: ${queueTime.toFixed(2)} seconds`);
     console.log(`Cusp Wait Time: ${cuspWaitTime.toFixed(2)} seconds`);
     console.log(`Queue Wait Time: ${queueWaitTime.toFixed(2)} seconds`);
+    console.log(`Tonnes per Hour: ${tonnesPerHour.toFixed(2)}`);
 
 
     
 
 
-    return { totalTime, spotTime, exitTime, queueTime, cuspWaitTime, queueWaitTime };
+    return { totalTime, spotTime, exitTime, queueTime, cuspWaitTime, queueWaitTime, tonnesPerHour };
 }
 
 // Function to calculate the length of the exit path (spot to road exit)

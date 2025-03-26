@@ -96,18 +96,45 @@ document.addEventListener("DOMContentLoaded", () => {
                 selectedPointIndex = clickedPointIndex;
                 console.log(`Point ${points[clickedPointIndex].name} selected for repositioning.`);
             } else if (selectedPointIndex !== null) {
-                points[selectedPointIndex].x = x;
-                points[selectedPointIndex].y = y;
-                console.log(`Point ${points[selectedPointIndex].name} repositioned to (${x}, ${y}).`);
-                selectedPointIndex = null;
+                const distanceToSpot = Math.sqrt(
+                    (x - points[2].x) ** 2 + (y - points[2].y) ** 2
+                );
+
+                if (selectedPointIndex === 1 && distanceToSpot < 200) {
+                    // Prevent cusp placement, remove the point, and show error
+                    console.error("Cusp too close to the spot point. Please place it again.");
+                    points[selectedPointIndex].x = null;
+                    points[selectedPointIndex].y = null;
+                    showCuspError();
+                } else {
+                    points[selectedPointIndex].x = x;
+                    points[selectedPointIndex].y = y;
+                    console.log(`Point ${points[selectedPointIndex].name} repositioned to (${x}, ${y}).`);
+                    selectedPointIndex = null;
+                    hideCuspError(); // Remove the error message if the cusp is placed correctly
+                }
             } else {
                 const nextPointIndex = points.findIndex(
                     (point, index) => point.x === null && point.y === null && index !== 2
                 );
                 if (nextPointIndex !== -1) {
+                    if (nextPointIndex === 1) {
+                        const distanceToSpot = Math.sqrt(
+                            (x - points[2].x) ** 2 + (y - points[2].y) ** 2
+                        );
+
+                        if (distanceToSpot < 200) {
+                            // Prevent cusp placement, remove the point, and show error
+                            console.error("Cusp too close to the spot point. Please place it again.");
+                            showCuspError();
+                            return;
+                        }
+                    }
+
                     points[nextPointIndex].x = x;
                     points[nextPointIndex].y = y;
                     console.log(`Point ${points[nextPointIndex].name} placed at (${x}, ${y}).`);
+                    hideCuspError(); // Remove the error message if the cusp is placed correctly
                 } else {
                     console.log("All points have been placed.");
                 }
@@ -206,7 +233,7 @@ document.addEventListener("DOMContentLoaded", () => {
             <div><strong>Time to Queue:</strong> ${queueTime} (s)</div>
             <div><strong>Cusp Wait:</strong> ${cuspWaitTime} (s)</div>
             <div><strong>Queue Wait:</strong> ${queueWaitTime} (s)</div>
-            <div><strong>Tonnes per Hour:</strong> ${tonnesPerHour}</div>
+            <div><strong>Tonnes per Hour:</strong> ${tonnesPerHour.toFixed(2)}</div>
         `;
     }
 
@@ -222,6 +249,22 @@ document.addEventListener("DOMContentLoaded", () => {
         if (boundsError) {
             boundsError.style.display = "none";
         }
+    }
+
+    function showCuspError() {
+        const cuspError = document.getElementById("cusp-error");
+        if (cuspError) {
+            cuspError.style.display = "block";
+        }
+        drawCanvas(); // Ensure the red dotted line is drawn immediately
+    }
+
+    function hideCuspError() {
+        const cuspError = document.getElementById("cusp-error");
+        if (cuspError) {
+            cuspError.style.display = "none";
+        }
+        drawCanvas(); // Ensure the red dotted line is removed immediately
     }
 
     drawLinesBtn.addEventListener("click", () => {
@@ -294,7 +337,7 @@ document.addEventListener("DOMContentLoaded", () => {
             ctx.restore();
 
             // Call userPerformance to evaluate performance
-            const { totalTime, spotTime, exitTime, queueTime, cuspWaitTime, queueWaitTime } = userPerformance(curves, outlines, scale, ctx);
+            const { totalTime, spotTime, exitTime, queueTime, cuspWaitTime, queueWaitTime, tonnesPerHour } = userPerformance(curves, outlines, scale, ctx);
 
             // Update the top-right display with consistent layout
             updateTopRightDisplay(
@@ -303,7 +346,8 @@ document.addEventListener("DOMContentLoaded", () => {
                 exitTime.toFixed(2),
                 queueTime.toFixed(2),
                 cuspWaitTime.toFixed(2),
-                queueWaitTime.toFixed(2)
+                queueWaitTime.toFixed(2),
+                tonnesPerHour
             );
 
             window.curves = curves; // Store curves globally for simulation
@@ -466,6 +510,21 @@ document.addEventListener("DOMContentLoaded", () => {
             ctx.closePath();
         } else {
             console.error("Load shape points are not defined or empty. Ensure they are generated before drawing.");
+        }
+
+        // Draw the red dotted circle around the spot point if the "cusp too close" error is active
+        if (document.getElementById("cusp-error").style.display === "block") {
+            ctx.save();
+            ctx.setLineDash([5, 5]); // Dotted line
+            ctx.strokeStyle = "red";
+            ctx.lineWidth = 2;
+
+            ctx.beginPath();
+            ctx.arc(points[2].x, points[2].y, 200, 0, Math.PI * 2); // 200px radius circle
+            ctx.stroke();
+            ctx.closePath();
+
+            ctx.restore();
         }
 
         // Plot the topRightCornerRoad point

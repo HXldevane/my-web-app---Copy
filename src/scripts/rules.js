@@ -65,7 +65,6 @@ function checkCurveIntersections(curve, loadShapeLines, ctx, side) {
     let hasIntersection = false;
 
     loadShapeLines.forEach((line) => {
-        console.log(`Checking intersection with line on ${side} offset:`, line); // Debugging log
         const intersections = curve.intersects(line); // Use line in p1, p2 format
         if (intersections.length > 0) {
             console.log(`Intersection found on ${side} offset:`, intersections);
