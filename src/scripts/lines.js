@@ -142,6 +142,52 @@ function drawCurve(ctx, curve) {
 }
 
 
+function drawOffsetCurve(ctx, curve) {
+    ctx.beginPath();
+    ctx.moveTo(curve.points[0].x, curve.points[0].y);
+    for (let t = 0; t <= 1; t += 0.01) {
+        const point = curve.get(t);
+        ctx.lineTo(point.x, point.y);
+    }
+    ctx.strokeStyle = "gray"; // Light blue color
+    ctx.lineWidth = 1;
+    ctx.stroke();
+    ctx.closePath();
+}
+
+function createCuspToSpotCurve(ctx, cusp, spot, minRadius) {
+    // Offset the start and end points by 100px in the local y-direction
+    const cuspOffset = {
+        x: cusp.x + 100 * Math.cos(cusp.heading + Math.PI / 2),
+        y: cusp.y + 100 * Math.sin(cusp.heading + Math.PI / 2),
+    };
+
+    const spotOffset = {
+        x: spot.x + 100 * Math.cos(spot.heading + Math.PI / 2),
+        y: spot.y + 100 * Math.sin(spot.heading + Math.PI / 2),
+    };
+
+    // Create the spline between the offset points
+    const curve = createSpline(cuspOffset, spotOffset, minRadius, "cusp-to-spot");
+
+    // Plot the curve with a distinct style
+    ctx.save();
+    ctx.beginPath();
+    ctx.setLineDash([]); // Solid line
+    ctx.moveTo(curve.points[0].x, curve.points[0].y);
+    for (let t = 0; t <= 1; t += 0.01) {
+        const point = curve.get(t);
+        ctx.lineTo(point.x, point.y);
+    }
+    ctx.strokeStyle = "red"; // Red color for high visibility
+    ctx.lineWidth = 4; // Thicker line for emphasis
+    ctx.stroke();
+    ctx.closePath();
+    ctx.restore();
+
+    return curve;
+}
+
 function drawSplines(ctx, points, minRadius, drawOutlines = false) {
     const segments = [
         { start: points[0], end: points[1], type: "entry-to-queue" },
@@ -162,52 +208,36 @@ function drawSplines(ctx, points, minRadius, drawOutlines = false) {
             // Always draw the dashed, light blue curve
             drawCurve(ctx, curve);
 
-            // Generate and save outline lines
-            const offset = 20; // Offset distance for the outline lines
-            const leftOutline = [];
-            const rightOutline = [];
+            // Generate offset curves using bezier-js's .offset(d)
+            const leftOffsetCurves = curve.offset(15); // Offset 30px to the left
+            const rightOffsetCurves = curve.offset(-15); // Offset 30px to the right
 
-            for (let t = 0; t <= 1; t += 0.01) {
-                const point = curve.get(t);
-                const normal = curve.normal(t); // Get the normal vector at t
-                const offsetX = normal.x * offset;
-                const offsetY = normal.y * offset;
+            // Store the offset curves in testoutlines
+            outlines.push({ type: segment.type, left: leftOffsetCurves, right: rightOffsetCurves });
 
-                // Calculate left and right outline points
-                leftOutline.push({ x: point.x - offsetX, y: point.y - offsetY });
-                rightOutline.push({ x: point.x + offsetX, y: point.y + offsetY });
-            }
+            // Draw the left offset curves
+            ctx.save();
+            ctx.strokeStyle = "green"; // Green for left offset
+            ctx.lineWidth = 2;
+            leftOffsetCurves.forEach((offsetCurve) => {
+                drawOffsetCurve(ctx, offsetCurve);
+            });
+            ctx.restore();
 
-            outlines.push({ type: segment.type, left: leftOutline, right: rightOutline });
+            // Draw the right offset curves
+            ctx.save();
+            ctx.strokeStyle = "orange"; // Orange for right offset
+            ctx.lineWidth = 2;
+            rightOffsetCurves.forEach((offsetCurve) => {
+                drawOffsetCurve(ctx, offsetCurve);
+            });
+            ctx.restore();
 
-            // Conditionally draw outline lines
-            if (drawOutlines) {
-                // Draw the left outline
-                ctx.beginPath();
-                ctx.moveTo(leftOutline[0].x, leftOutline[0].y);
-                leftOutline.forEach((point) => {
-                    ctx.lineTo(point.x, point.y);
-                });
-                ctx.strokeStyle = "rgba(52, 52, 54, 0.5)"; // Semi-transparent blue
-                ctx.lineWidth = 1;
-                ctx.stroke();
-                ctx.closePath();
-
-                // Draw the right outline
-                ctx.beginPath();
-                ctx.moveTo(rightOutline[0].x, rightOutline[0].y);
-                rightOutline.forEach((point) => {
-                    ctx.lineTo(point.x, point.y);
-                });
-                ctx.strokeStyle = "rgba(52, 52, 54, 0.5)"; // Semi-transparent blue
-                ctx.lineWidth = 1;
-                ctx.stroke();
-                ctx.closePath();
-            }
+            
         }
     });
 
-    return { curves, outlines }; // Return both curves and outlines
+    return { curves, outlines }; // Return curves, outlines, and testoutlines
 }
 
-export { drawSplines };
+export { drawSplines, createCuspToSpotCurve };
