@@ -39,15 +39,16 @@ document.addEventListener("DOMContentLoaded", () => {
     let selectedPointIndex = null;
     let mode = "adjust-position";
     const minRadius = 50;
+    let difficulty = "easy"; // Default difficulty
 
     // Generate all road points
     let { road, roadEntry, roadExit } = generateAllRoadPoints(canvas.height, scale);
 
-    let spot = generateSpot(canvas.width, canvas.height, scale);
+    // Ensure the spot is set on start
+    let spot = generateSpot(canvas.width, canvas.height, scale, difficulty); // Pass difficulty
     points[2] = { ...spot, name: "Spot" };
 
     let spline = null; // Initialize spline variable
-    let difficulty = "easy"; // Default difficulty
 
     // Generate the load shape on page load
     const angle = road.angle * (Math.PI / 180);
@@ -166,7 +167,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
         console.log("Canvas regenerated. All points reset.");
         ({ road, roadEntry, roadExit } = generateAllRoadPoints(canvas.height, scale)); // Regenerate all road points
-        spot = generateSpot(canvas.width, canvas.height, scale);
+        spot = generateSpot(canvas.width, canvas.height, scale, difficulty); // Pass difficulty
         points[2] = { ...spot, name: "Spot" };
 
         // Calculate bottomRightCornerRoad dynamically considering the road's rotation angle

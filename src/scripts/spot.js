@@ -1,6 +1,14 @@
-function generateSpot(canvasWidth, canvasHeight, scale) {
-    const x = 1000; // Fixed x position
-    const centerY = canvasHeight/scale / 2;
+function generateSpot(canvasWidth, canvasHeight, scale, difficulty) {
+    let x;
+    if (difficulty === "easy") {
+        x = Math.random() * (1000 - 800) + 800; // Random x between 800 and 1000
+    } else if (difficulty === "medium") {
+        x = Math.random() * (900 - 750) + 750; // Random x between 750 and 900
+    } else if (difficulty === "hard") {
+        x = Math.random() * (850 - 600) + 600; // Random x between 600 and 800
+    }
+
+    const centerY = canvasHeight / scale / 2;
     const y = centerY + (Math.random() * 100 - 50); // ±50px from the center
     const heading = ((Math.random() * 80 - 40) + 180) * (Math.PI / 180); // ±40 degrees flipped by 180
 
