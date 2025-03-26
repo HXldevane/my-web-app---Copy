@@ -293,46 +293,14 @@ document.addEventListener("DOMContentLoaded", () => {
     
           
             // Call cuspInterceptLength to calculate intersections
-            const cuspIntercepts = cuspInterceptLength(curves, outlines);
+            const cuspIntercepts = cuspInterceptLength(curves, outlines, ctx); // Pass ctx
             console.log("Cusp Intercepts:", cuspIntercepts);
     
-            // Visualize cusp intersections
-            ctx.save();
-            ctx.fillStyle = "red";
-            cuspIntercepts.leftIntersections.forEach(({ point }) => {
-                ctx.beginPath();
-                ctx.arc(point.x, point.y, 5, 0, Math.PI * 2);
-                ctx.fill();
-                ctx.closePath();
-            });
-            cuspIntercepts.rightIntersections.forEach(({ point }) => {
-                ctx.beginPath();
-                ctx.arc(point.x, point.y, 5, 0, Math.PI * 2);
-                ctx.fill();
-                ctx.closePath();
-            });
-            ctx.restore();
     
             // Call queueInterceptLength to calculate intersections
-            const queueIntercepts = queueInterceptLength(curves, outlines);
+            const queueIntercepts = queueInterceptLength(curves, outlines, ctx); // Pass ctx
             console.log("Queue Intercepts:", queueIntercepts);
     
-            // Visualize queue intersections
-            ctx.save();
-            ctx.fillStyle = "red";
-            queueIntercepts.leftIntersections.forEach(({ point }) => {
-                ctx.beginPath();
-                ctx.arc(point.x, point.y, 5, 0, Math.PI * 2);
-                ctx.fill();
-                ctx.closePath();
-            });
-            queueIntercepts.rightIntersections.forEach(({ point }) => {
-                ctx.beginPath();
-                ctx.arc(point.x, point.y, 5, 0, Math.PI * 2);
-                ctx.fill();
-                ctx.closePath();
-            });
-            ctx.restore();
     
             // Call userPerformance to evaluate performance
             const { totalTime, spotTime, exitTime, queueTime, cuspWaitTime, queueWaitTime, tonnesPerHour } = userPerformance(curves, outlines, scale, ctx);
