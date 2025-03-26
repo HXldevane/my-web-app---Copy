@@ -1,6 +1,8 @@
 import { Bezier } from "bezier-js";
 
 function checkPathIntersections(outlines, loadShapeBoundary, ctx) {
+    let hasIntersections = false; // Track if any intersections are found
+
     // Log the loadShapeBoundary points for debugging
     console.log("loadShapeBoundary points:", loadShapeBoundary);
 
@@ -22,41 +24,60 @@ function checkPathIntersections(outlines, loadShapeBoundary, ctx) {
         // Check left offset curves
         left.forEach((leftCurve) => {
             if (Array.isArray(leftCurve)) {
-                leftCurve.forEach((subCurve) => checkCurveIntersections(subCurve, loadShapeLines, ctx, "left"));
+                leftCurve.forEach((subCurve) => {
+                    if (checkCurveIntersections(subCurve, loadShapeLines, ctx, "left")) {
+                        hasIntersections = true;
+                    }
+                });
             } else {
-                checkCurveIntersections(leftCurve, loadShapeLines, ctx, "left");
+                if (checkCurveIntersections(leftCurve, loadShapeLines, ctx, "left")) {
+                    hasIntersections = true;
+                }
             }
         });
 
         // Check right offset curves
         right.forEach((rightCurve) => {
             if (Array.isArray(rightCurve)) {
-                rightCurve.forEach((subCurve) => checkCurveIntersections(subCurve, loadShapeLines, ctx, "right"));
+                rightCurve.forEach((subCurve) => {
+                    if (checkCurveIntersections(subCurve, loadShapeLines, ctx, "right")) {
+                        hasIntersections = true;
+                    }
+                });
             } else {
-                checkCurveIntersections(rightCurve, loadShapeLines, ctx, "right");
+                if (checkCurveIntersections(rightCurve, loadShapeLines, ctx, "right")) {
+                    hasIntersections = true;
+                }
             }
         });
     });
+
+    return hasIntersections; // Return true if any intersections are found
 }
 
 // Helper function to check intersections for a single curve
 function checkCurveIntersections(curve, loadShapeLines, ctx, side) {
     if (!(curve instanceof Bezier)) {
         console.error(`Invalid Bezier curve in ${side} offset:`, curve);
-        return;
+        return false;
     }
+
+    let hasIntersection = false;
 
     loadShapeLines.forEach((line) => {
         console.log(`Checking intersection with line on ${side} offset:`, line); // Debugging log
         const intersections = curve.intersects(line); // Use line in p1, p2 format
         if (intersections.length > 0) {
             console.log(`Intersection found on ${side} offset:`, intersections);
+            hasIntersection = true;
             intersections.forEach((t) => {
                 const point = curve.get(t);
                 plotIntersection(ctx, point);
             });
         }
     });
+
+    return hasIntersection;
 }
 
 // Helper function to plot a dot at the intersection point

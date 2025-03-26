@@ -156,8 +156,9 @@ document.addEventListener("DOMContentLoaded", () => {
         resetPoints(points);
         selectedPointIndex = null;
 
-        // Clear statistics
+        // Clear statistics and hide error message
         clearTopRightDisplay();
+        hideBoundsError();
 
         // Reset the headings for cusp and exit points
         points[1].heading = -Math.PI / 2; // Cusp: 90 degrees to the left
@@ -208,7 +209,23 @@ document.addEventListener("DOMContentLoaded", () => {
         `;
     }
 
+    function showBoundsError() {
+        const boundsError = document.getElementById("bounds-error");
+        if (boundsError) {
+            boundsError.style.display = "block";
+        }
+    }
+
+    function hideBoundsError() {
+        const boundsError = document.getElementById("bounds-error");
+        if (boundsError) {
+            boundsError.style.display = "none";
+        }
+    }
+
     drawLinesBtn.addEventListener("click", () => {
+        hideBoundsError(); // Hide any previous error message
+
         if (points.every((point, index) => (index === 2 || (point.x !== null && point.y !== null)))) {
             console.log("Drawing splines and highlighting 'cusp-to-spot-opposite' shape...");
             const allPoints = [roadEntry, points[0], points[1], points[2], points[3], roadExit];
@@ -222,7 +239,12 @@ document.addEventListener("DOMContentLoaded", () => {
             findIntersections(outlines, ctx); // Highlight the "cusp-to-spot-opposite" shape
 
             // Check for intersections between path outlines and the load shape boundary
-            checkPathIntersections(outlines, loadShapePoints, ctx); // Pass outlines and ctx
+            const hasIntersections = checkPathIntersections(outlines, loadShapePoints, ctx); // Pass outlines and ctx
+
+            if (hasIntersections) {
+                console.error("Bounds Error: Intersection detected.");
+                showBoundsError(); // Display the error message
+            }
 
             // Create and plot the new cusp-to-spot curve on top
             const cuspToSpotCurve = createCuspToSpotCurve(ctx, points[1], points[2], minRadius);
@@ -320,8 +342,9 @@ document.addEventListener("DOMContentLoaded", () => {
             difficulty = "easy";
         }
 
-        // Clear statistics
+        // Clear statistics and hide error message
         clearTopRightDisplay();
+        hideBoundsError();
 
         // Reset the headings for cusp and exit points
         points[1].heading = -Math.PI / 2; // Cusp: 90 degrees to the left
