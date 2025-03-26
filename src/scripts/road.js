@@ -7,28 +7,44 @@ function generateRandomRoad(canvasHeight, scale) {
     return { x, y, angle };
 }
 
+
+
 function generateRoadPoints(road) {
-    const roadWidth = 60;
     const roadHeight = 100;
-    const roadQuarterHeight = roadHeight / 4;
-    const roadCenterX = road.x;
+    const offset = roadHeight / 4;
+    const angleRad = road.angle * (Math.PI / 180);
+    const xShift = 25 // 👈 Move the road left along its X axis (positive is right)
+
+    // Rotate a point (x, y) offset around the road center by the heading angle
+    function rotatePoint(cx, cy, offsetX, offsetY, angle) {
+        return {
+            x: cx + offsetX * Math.cos(angle) - offsetY * Math.sin(angle),
+            y: cy + offsetX * Math.sin(angle) + offsetY * Math.cos(angle),
+        };
+    }
+
+    // Apply both Y-offset (forward/backward) and X-shift (sideways)
+    const entry = rotatePoint(road.x, road.y, xShift, -offset, angleRad);
+    const exit = rotatePoint(road.x, road.y, xShift, offset, angleRad);
 
     const roadEntry = {
         name: "Road Entry",
-        x: roadCenterX,
-        y: road.y - roadHeight / 2 + roadQuarterHeight,
-        heading: road.angle * (Math.PI / 180),
+        x: entry.x,
+        y: entry.y,
+        heading: angleRad,
     };
 
     const roadExit = {
         name: "Road Exit",
-        x: roadCenterX,
-        y: road.y + roadHeight / 2 - roadQuarterHeight,
-        heading: (road.angle + 180) * (Math.PI / 180),
+        x: exit.x,
+        y: exit.y,
+        heading: (angleRad + Math.PI) % (2 * Math.PI),
     };
 
     return { roadEntry, roadExit };
 }
+
+
 
 function generateAllRoadPoints(canvasHeight, scale) {
     const road = generateRandomRoad(canvasHeight, scale);
