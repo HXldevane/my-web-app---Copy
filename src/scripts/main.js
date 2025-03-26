@@ -329,8 +329,16 @@ document.addEventListener("DOMContentLoaded", () => {
             return;
         }
     
-        // Call the scheduler to handle the kick and call logic
-        scheduler(ctx, spotToExitCurve, exitToExitCurve, cuspToSpotCurve, cuspToSpotOutline);
+        console.log("Starting simulation...");
+        console.log("spotToExitCurve:", spotToExitCurve);
+        console.log("exitToExitCurve:", exitToExitCurve);
+    
+        const cuspWaitTime = 5; // Example wait time in seconds (replace with actual value if dynamic)
+    
+        // Call the kickAHT function to simulate the truck movement
+        kickAHT(ctx, spotToExitCurve, exitToExitCurve, cuspToSpotCurve, cuspToSpotOutline, drawCanvas, () => {
+            console.log("Simulation completed.");
+        }, cuspWaitTime);
     });
 
     difficultyBtn.addEventListener("click", () => {

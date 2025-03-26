@@ -1,5 +1,9 @@
 import { Bezier } from "bezier-js"; // Ensure Bezier is imported
 
+
+const BucketPass = 45;
+const truckBuckets = 4;
+
 // Function to calculate the pixel length of the path
 function calculatePathLength(pathPoints, scale) {
     let totalLength = 0;
@@ -88,6 +92,10 @@ function userPerformance(curves, cuspOutlines, scale, ctx) {
     console.log(`Queue Time: ${queueTime.toFixed(2)} seconds`);
     console.log(`Cusp Wait Time: ${cuspWaitTime.toFixed(2)} seconds`);
     console.log(`Queue Wait Time: ${queueWaitTime.toFixed(2)} seconds`);
+
+
+    
+
 
     return { totalTime, spotTime, exitTime, queueTime, cuspWaitTime, queueWaitTime };
 }

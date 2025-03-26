@@ -1,46 +1,101 @@
 import { Bezier } from "bezier-js";
+import myImageUrl from './truck.png';
 
 let kickAnimationId = null;
 let callAnimationId = null;
 let callAHTTriggered = false;
 
-function easeInOutQuad(t) {
-    return t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
+// Speed and acceleration factors
+const speedFactor = 2; // Factor to scale speeds and accelerations
+const loadedAcceleration = (2 / 3.6) * speedFactor; // m/s² -> kph scaled
+const loadedDeceleration = (2 / 3.6) * speedFactor; // m/s² -> kph scaled
+const maxForwardSpeed = (30 / 3.6) * speedFactor; // m/s -> kph scaled
+const reverseAcceleration = (2 / 3.6) * speedFactor; // m/s² -> kph scaled
+const reverseDeceleration = (2 / 3.6) * speedFactor; // m/s² -> kph scaled
+const maxReverseSpeed = (10 / 3.6) * speedFactor; // m/s -> kph scaled
+
+function calculateTimeForDistance(distance, acceleration, maxSpeed) {
+    const distanceInMeters = distance * 0.2; // Convert pixels to meters (1 pixel = 20 cm)
+
+    let accelTime = 0;
+    let accelDistance = 0;
+    if (acceleration > 0) {
+        accelTime = maxSpeed / acceleration; // Time to reach max speed
+        accelDistance = 0.5 * acceleration * accelTime ** 2; // Distance covered during acceleration
+    }
+
+    if (distanceInMeters <= accelDistance) {
+        // If the distance is too short to reach max speed
+        return Math.sqrt(2 * distanceInMeters / acceleration); // Time for acceleration only
+    }
+
+    const cruiseDistance = distanceInMeters - accelDistance; // Distance covered at max speed
+    const cruiseTime = cruiseDistance > 0 ? cruiseDistance / maxSpeed : 0; // Time spent cruising
+
+    return accelTime + cruiseTime; // Total time
 }
 
-function kickAHT(ctx, spotToExitCurve, exitToExitCurve, cuspToSpotCurve, cuspToSpotOutline, onComplete) {
-    const speed = 30; // Speed in pixels per second
-    const totalLength = spotToExitCurve.length(); // Only the spot-to-exit curve is used
-    const totalDuration = (totalLength / speed) * 1000; // Total time in milliseconds
+function kickAHT(ctx, spotToExitCurve, exitToExitCurve, cuspToSpotCurve, cuspToSpotOutline, drawCanvas, onComplete, cuspWaitTime) {
+    const truckImage = new Image();
+    truckImage.src = myImageUrl;
+
+    const totalLength = spotToExitCurve.length() + exitToExitCurve.length(); // Total length of the path
+    const totalDuration = calculateTimeForDistance(totalLength, loadedAcceleration, maxForwardSpeed) * 1000; // Total time in milliseconds
     const startTime = performance.now();
+
+    // Start the `callAHT` function independently
+    setTimeout(() => {
+        callAHT(ctx, cuspToSpotCurve, drawCanvas, () => {
+            console.log("Call AHT completed.");
+        });
+    }, cuspWaitTime * 1000 / speedFactor); // Convert seconds to milliseconds and scale by speedFactor
 
     function animate(time) {
         const elapsed = time - startTime;
         const t = Math.min(elapsed / totalDuration, 1); // Normalize time to [0, 1]
-        const easedT = easeInOutQuad(t); // Apply easing for acceleration and deceleration
 
-        // Calculate position on spot-to-exit curve
-        const currentPosition = spotToExitCurve.get(easedT);
-
-        // Draw the kicking truck's semi-transparent dot
-        drawDot(ctx, currentPosition.x, currentPosition.y, "rgba(255, 0, 0, 0.5)");
-
-        // Check if the truck intercepts the cusp-to-spot outline or gets within 10px
-        if (!callAHTTriggered && intersectsOutline(currentPosition, cuspToSpotOutline, 10)) {
-            console.log("Truck intercepted the cusp-to-spot outline or got within 10px.");
-            callAHT(ctx, cuspToSpotCurve, () => {
-                console.log("Call AHT completed.");
-            });
+        let position, tangent;
+        if (t <= spotToExitCurve.length() / totalLength) {
+            const normalizedT = t / (spotToExitCurve.length() / totalLength);
+            position = spotToExitCurve.get(normalizedT);
+            tangent = spotToExitCurve.derivative(normalizedT);
+        } else {
+            const normalizedT = (t - spotToExitCurve.length() / totalLength) / (exitToExitCurve.length() / totalLength);
+            position = exitToExitCurve.get(normalizedT);
+            tangent = exitToExitCurve.derivative(normalizedT);
         }
+
+        const angle = Math.atan2(tangent.y, tangent.x) + Math.PI / 2; // Rotate by 90 degrees
+
+        // Clear the previous truck position
+        ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+
+        // Redraw the canvas elements (e.g., road, points, splines)
+        drawCanvas();
+
+        // Draw the truck at the new position with rotation
+        ctx.save();
+        ctx.translate(position.x, position.y); // Move to the truck's position
+        ctx.rotate(angle); // Rotate the truck to align with the path
+        ctx.drawImage(truckImage, -12.5, -10, 25, 40); // Draw the truck image centered
+        ctx.restore();
 
         if (t < 1) {
             kickAnimationId = requestAnimationFrame(animate);
         } else if (onComplete) {
+            console.log("Kick AHT completed.");
             onComplete();
         }
     }
 
-    kickAnimationId = requestAnimationFrame(animate);
+    truckImage.onload = () => {
+        console.log("Truck image loaded successfully.");
+        kickAnimationId = requestAnimationFrame(animate);
+    };
+
+    truckImage.onerror = () => {
+        console.error("Failed to load truck image. Ensure 'truck.png' is in the correct path.");
+    };
 }
 
 function intersectsOutline(position, outline, threshold) {
@@ -87,27 +142,34 @@ function pointToSegmentDistance(point, start, end) {
     return dist;
 }
 
-function callAHT(ctx, cuspToSpotCurve, onComplete) {
-    if (callAHTTriggered) return; // Ensure `callAHT` is callable only once
-    callAHTTriggered = true;
+function callAHT(ctx, cuspToSpotCurve, drawCanvas, onComplete) {
+    const truckImage = new Image();
+    truckImage.src = myImageUrl;
 
-    console.log("Call AHT triggered."); // Log when `callAHT` is triggered
-
-    const speed = 30; // Speed in pixels per second
-    const totalLength = cuspToSpotCurve.length(); // Total length of the curve
-    const totalDuration = (totalLength / speed) * 1000; // Total time in milliseconds
+    const totalLength = cuspToSpotCurve.length(); // Total length of the path
+    const totalDuration = calculateTimeForDistance(totalLength, reverseAcceleration, maxReverseSpeed) * 1000; // Total time in milliseconds
     const startTime = performance.now();
 
     function animate(time) {
         const elapsed = time - startTime;
         const t = Math.min(elapsed / totalDuration, 1); // Normalize time to [0, 1]
-        const easedT = easeInOutQuad(t); // Apply easing for acceleration and deceleration
 
-        // Calculate position on cusp-to-spot curve
-        const position = cuspToSpotCurve.get(easedT);
+        const position = cuspToSpotCurve.get(t);
+        const tangent = cuspToSpotCurve.derivative(t);
+        const angle = Math.atan2(tangent.y, tangent.x) + Math.PI / 2; // Rotate by 90 degrees
 
-        // Draw the called truck's semi-transparent dot
-        drawDot(ctx, position.x, position.y, "rgba(0, 0, 255, 0.5)");
+        // Clear the previous truck position
+        ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+
+        // Redraw the canvas elements (e.g., road, points, splines)
+        drawCanvas();
+
+        // Draw the truck at the new position with rotation
+        ctx.save();
+        ctx.translate(position.x, position.y); // Move to the truck's position
+        ctx.rotate(angle); // Rotate the truck to align with the path
+        ctx.drawImage(truckImage, -12.5, -10, 25, 40); // Draw the truck image centered
+        ctx.restore();
 
         if (t < 1) {
             callAnimationId = requestAnimationFrame(animate);
@@ -116,7 +178,14 @@ function callAHT(ctx, cuspToSpotCurve, onComplete) {
         }
     }
 
-    callAnimationId = requestAnimationFrame(animate);
+    truckImage.onload = () => {
+        console.log("Truck image loaded successfully for callAHT.");
+        callAnimationId = requestAnimationFrame(animate);
+    };
+
+    truckImage.onerror = () => {
+        console.error("Failed to load truck image for callAHT. Ensure 'truck.png' is in the correct path.");
+    };
 }
 
 function scheduler(ctx, cuspToSpotCurve, spotToExitCurve, exitToExitCurve, cuspToSpotOutline) {
