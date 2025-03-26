@@ -8,10 +8,20 @@ function generateSpot(canvasWidth, canvasHeight, scale) {
 }
 
 function drawSpot(ctx, spot) {
+    // Draw the gold dot
     ctx.beginPath();
     ctx.arc(spot.x, spot.y, 5, 0, Math.PI * 2);
-    ctx.fillStyle = "blue";
+    ctx.fillStyle = "gold";
     ctx.fill();
+    ctx.closePath();
+
+    // Draw the gold circle around the dot
+    const circleRadius = 20; // Radius of the circle
+    ctx.beginPath();
+    ctx.arc(spot.x, spot.y, circleRadius, 0, Math.PI * 2);
+    ctx.strokeStyle = "gold";
+    ctx.lineWidth = 2;
+    ctx.stroke();
     ctx.closePath();
 }
 

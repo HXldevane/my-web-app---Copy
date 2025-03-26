@@ -1,7 +1,7 @@
 import { drawSplines } from "./lines.js";
 import { generateAllRoadPoints, drawRoad, generateLoadShape } from "./road.js"; // Updated imports
 import { generateSpot, drawSpot } from "./spot.js";
-import { initializePoints, resetPoints } from "./points.js";
+import { initializePoints, resetPoints, drawQueue, drawCusp, drawExit } from "./points.js";
 import { Bezier } from "bezier-js"; // Correct import
 import { findIntersections } from "./calculate.js"; // Import the new function
 import { stopAnimations, kickAHT, callAHT, scheduler } from "./autonomy.js"; // Import scheduler function
@@ -134,6 +134,11 @@ document.addEventListener("DOMContentLoaded", () => {
         stopAnimations(); // Stop any ongoing animations
         resetPoints(points);
         selectedPointIndex = null;
+
+        // Reset the headings for cusp and exit points
+        points[1].heading = -Math.PI / 2; // Cusp: 90 degrees to the left
+        points[3].heading = Math.PI; // Exit: 180 degrees
+
         console.log("Canvas regenerated. All points reset.");
         ({ road, roadEntry, roadExit } = generateAllRoadPoints(canvas.height, scale)); // Regenerate all road points
         spot = generateSpot(canvas.width, canvas.height, scale);
@@ -207,6 +212,10 @@ document.addEventListener("DOMContentLoaded", () => {
             difficulty = "easy";
         }
 
+        // Reset the headings for cusp and exit points
+        points[1].heading = -Math.PI / 2; // Cusp: 90 degrees to the left
+        points[3].heading = Math.PI; // Exit: 180 degrees
+
         // Update button text to reflect the current difficulty
         difficultyBtn.textContent = `Difficulty: ${difficulty.charAt(0).toUpperCase() + difficulty.slice(1)}`;
 
@@ -226,37 +235,31 @@ document.addEventListener("DOMContentLoaded", () => {
         ctx.fillStyle = "#f9f9f9"; // Very light grey
         ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-        // Pass roadEntry and roadExit to drawRoad
         drawRoad(ctx, road, roadEntry, roadExit); // Plot the road
-        drawSpot(ctx, spot); // Plot the spot
 
-        
+        // Define colors for points
+        const greenColor = "limegreen";
+        const goldColor = "gold";
 
-        points.forEach((point, index) => {
-            if (point.x !== null && point.y !== null) {
-                ctx.beginPath();
-                ctx.arc(point.x, point.y, 5, 0, Math.PI * 2);
-                ctx.fillStyle = index === selectedPointIndex ? "green" : "red";
-                ctx.fill();
-                ctx.closePath();
+        // Draw queue point if placed
+        if (points[0].x !== null && points[0].y !== null) {
+            drawQueue(ctx, points[0], greenColor, selectedPointIndex === 0);
+        }
 
-                const arrowLength = 30;
-                const arrowX = point.x + arrowLength * Math.cos(point.heading);
-                const arrowY = point.y + arrowLength * Math.sin(point.heading);
+        // Draw cusp point if placed
+        if (points[1].x !== null && points[1].y !== null) {
+            drawCusp(ctx, points[1], goldColor, selectedPointIndex === 1);
+        }
 
-                ctx.beginPath();
-                ctx.moveTo(point.x, point.y);
-                ctx.lineTo(arrowX, arrowY);
-                ctx.strokeStyle = "blue";
-                ctx.lineWidth = 2;
-                ctx.stroke();
-                ctx.closePath();
+        // Draw spot point if placed
+        if (points[2].x !== null && points[2].y !== null) {
+            drawSpot(ctx, points[2], goldColor);
+        }
 
-                ctx.font = "12px Arial";
-                ctx.fillStyle = "black";
-                ctx.fillText(point.name, point.x + 10, point.y - 10);
-            }
-        });
+        // Draw exit point if placed
+        if (points[3].x !== null && points[3].y !== null) {
+            drawExit(ctx, points[3], greenColor, selectedPointIndex === 3);
+        }
 
         // Always draw the purple splines
         const allPoints = [roadEntry, points[0], points[1], points[2], points[3], roadExit];
