@@ -38,6 +38,9 @@ function userPerformance(curves, cuspOutlines, scale, ctx) {
     const cuspIntercept = cuspInterceptLength(curves, cuspOutlines);
     console.log("Cusp Intercept Lengths:", cuspIntercept);
 
+    const queueIntercept = queueInterceptLength(curves, cuspOutlines);
+    console.log("Queue Intercept Lengths:", queueIntercept);
+
     // Visualize intersections
     ctx.save();
     ctx.fillStyle = "red";
@@ -48,6 +51,18 @@ function userPerformance(curves, cuspOutlines, scale, ctx) {
         ctx.closePath();
     });
     cuspIntercept.rightIntersections.forEach((point) => {
+        ctx.beginPath();
+        ctx.arc(point.x, point.y, 5, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.closePath();
+    });
+    queueIntercept.leftIntersections.forEach((point) => {
+        ctx.beginPath();
+        ctx.arc(point.x, point.y, 5, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.closePath();
+    });
+    queueIntercept.rightIntersections.forEach((point) => {
         ctx.beginPath();
         ctx.arc(point.x, point.y, 5, 0, Math.PI * 2);
         ctx.fill();
@@ -98,11 +113,12 @@ function queuePathLength(curves, scale) {
 
 // Function to calculate the longest cusp intercept length
 function cuspInterceptLength(curves, cuspOutlines) {
-    const spotToExitCurve = curves.find((curve) => curve.type === "spot-to-exit")?.curve;
+    const spotToExitOutline = cuspOutlines.find((outline) => outline.type === "spot-to-exit");
+    const exitToRoadExitOutline = cuspOutlines.find((outline) => outline.type === "exit-to-exit");
     const cuspToSpotOutline = cuspOutlines.find((outline) => outline.type === "cusp-to-spot-opposite");
 
-    if (!cuspToSpotOutline || !spotToExitCurve) {
-        console.error("Required outline or curve for cusp intercept calculation is missing.");
+    if (!cuspToSpotOutline || !spotToExitOutline || !exitToRoadExitOutline) {
+        console.error("Required outlines for cusp intercept calculation are missing.");
         return { leftIntersections: [], rightIntersections: [] };
     }
 
@@ -112,7 +128,6 @@ function cuspInterceptLength(curves, cuspOutlines) {
         if (!Array.isArray(intersectionTs)) return []; // Ensure it's an array
         return intersectionTs.map((t) => {
             if (typeof t === "string" && t.includes("/")) {
-                // Handle cases where the intersection is reported as "t1/t2"
                 const [t1] = t.split("/").map(parseFloat);
                 return curve1.get(t1);
             }
@@ -122,27 +137,145 @@ function cuspInterceptLength(curves, cuspOutlines) {
 
     // Find intersections for left and right offset curves
     const leftIntersections = [];
-    cuspToSpotOutline.left.forEach((leftCurve) => {
-        const intersections = findIntersections(spotToExitCurve, leftCurve);
-        leftIntersections.push(...intersections);
+    cuspToSpotOutline.left.forEach((cuspLeftCurve) => {
+        [...spotToExitOutline.left, ...exitToRoadExitOutline.left].forEach((spotLeftCurve) => {
+            const intersections = findIntersections(cuspLeftCurve, spotLeftCurve);
+            leftIntersections.push(...intersections);
+        });
     });
 
     const rightIntersections = [];
-    cuspToSpotOutline.right.forEach((rightCurve) => {
-        const intersections = findIntersections(spotToExitCurve, rightCurve);
-        rightIntersections.push(...intersections);
+    cuspToSpotOutline.right.forEach((cuspRightCurve) => {
+        [...spotToExitOutline.right, ...exitToRoadExitOutline.right].forEach((spotRightCurve) => {
+            const intersections = findIntersections(cuspRightCurve, spotRightCurve);
+            rightIntersections.push(...intersections);
+        });
     });
 
-    console.log("Left Intersections:", leftIntersections);
-    console.log("Right Intersections:", rightIntersections);
+    // Find the furthest intersection along the path
+    function findFurthestIntersection(intersections, spot) {
+        let furthestIntersection = null;
+        let maxDistance = 0;
+
+        intersections.forEach((intersection) => {
+            const distance = Math.sqrt(
+                Math.pow(intersection.x - spot.x, 2) + Math.pow(intersection.y - spot.y, 2)
+            );
+            if (distance > maxDistance) {
+                maxDistance = distance;
+                furthestIntersection = intersection;
+            }
+        });
+
+        return { furthestIntersection, maxDistance };
+    }
+
+    const spot = curves.find((curve) => curve.type === "spot-to-exit")?.curve.points[0]; // Spot position
+    const furthestLeft = findFurthestIntersection(leftIntersections, spot);
+    const furthestRight = findFurthestIntersection(rightIntersections, spot);
+
+    const furthestOverall =
+        furthestLeft.maxDistance > furthestRight.maxDistance
+            ? { side: "Left", ...furthestLeft }
+            : { side: "Right", ...furthestRight };
+
+    console.log(
+        `Furthest Intersection Overall: Side: ${furthestOverall.side}, Point:`,
+        furthestOverall.furthestIntersection,
+        "Distance:",
+        furthestOverall.maxDistance
+    );
 
     return { leftIntersections, rightIntersections };
 }
 
-// Placeholder for queue intercept length
-function queueInterceptLength() {
-    // Logic to be implemented later
-    return null;
+function queueInterceptLength(curves, cuspOutlines) {
+    const queueToCuspOutline = cuspOutlines.find((outline) => outline.type === "queue-to-cusp");
+    const spotToExitOutline = cuspOutlines.find((outline) => outline.type === "spot-to-exit");
+    const exitToRoadExitOutline = cuspOutlines.find((outline) => outline.type === "exit-to-exit");
+
+    if (!queueToCuspOutline || !spotToExitOutline || !exitToRoadExitOutline) {
+        console.error("Required outlines for queue intercept calculation are missing.");
+        return { leftIntersections: [], rightIntersections: [] };
+    }
+
+    // Helper function to find intersections between two Bezier curves
+    function findIntersections(curve1, curve2) {
+        const intersectionTs = curve1.intersects(curve2); // Returns t-values of intersections
+        if (!Array.isArray(intersectionTs)) return []; // Ensure it's an array
+        return intersectionTs.map((t) => {
+            if (typeof t === "string" && t.includes("/")) {
+                const [t1] = t.split("/").map(parseFloat);
+                return curve1.get(t1);
+            }
+            return curve1.get(parseFloat(t)); // Convert t to a number and get the point
+        });
+    }
+
+    // Find intersections for left and right offset curves
+    const leftIntersections = [];
+    queueToCuspOutline.left.forEach((queueLeftCurve) => {
+        [...spotToExitOutline.left, ...exitToRoadExitOutline.left].forEach((spotLeftCurve) => {
+            const intersections = findIntersections(queueLeftCurve, spotLeftCurve);
+            leftIntersections.push(...intersections);
+        });
+    });
+
+    const rightIntersections = [];
+    queueToCuspOutline.right.forEach((queueRightCurve) => {
+        [...spotToExitOutline.right, ...exitToRoadExitOutline.right].forEach((spotRightCurve) => {
+            const intersections = findIntersections(queueRightCurve, spotRightCurve);
+            rightIntersections.push(...intersections);
+        });
+    });
+
+    // Find the furthest intersection along the path
+    function findFurthestIntersection(intersections, queue) {
+        let furthestIntersection = null;
+        let maxDistance = 0;
+
+        intersections.forEach((intersection) => {
+            const distance = Math.sqrt(
+                Math.pow(intersection.x - queue.x, 2) + Math.pow(intersection.y - queue.y, 2)
+            );
+            if (distance > maxDistance) {
+                maxDistance = distance;
+                furthestIntersection = intersection;
+            }
+        });
+
+        return { furthestIntersection, maxDistance };
+    }
+
+    const queue = curves.find((curve) => curve.type === "queue-to-cusp")?.curve.points[0]; // Queue position
+    const furthestLeft = findFurthestIntersection(leftIntersections, queue);
+    const furthestRight = findFurthestIntersection(rightIntersections, queue);
+
+    const furthestOverall =
+        furthestLeft.maxDistance > furthestRight.maxDistance
+            ? { side: "Left", ...furthestLeft }
+            : { side: "Right", ...furthestRight };
+
+    console.log(
+        `Furthest Queue Intersection Overall: Side: ${furthestOverall.side}, Point:`,
+        furthestOverall.furthestIntersection,
+        "Distance:",
+        furthestOverall.maxDistance
+    );
+
+    return { leftIntersections, rightIntersections };
+}
+
+// Helper function to highlight an intersection
+function highlightIntersection(intersection, color) {
+    const canvas = document.getElementById("canvas");
+    const ctx = canvas.getContext("2d");
+
+    ctx.beginPath();
+    ctx.arc(intersection.x, intersection.y, 7, 0, Math.PI * 2);
+    ctx.fillStyle = color; // Highlight color
+    ctx.fill();
+    ctx.closePath();
 }
 
 // Export the functions

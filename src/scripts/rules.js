@@ -1,31 +1,19 @@
+import { Bezier } from "bezier-js";
+
 function checkPathIntersections(outlines, loadShapeBoundary, ctx) {
-    // Helper function to check if two line segments intersect and return the intersection point
-    function getIntersectionPoint(line1, line2) {
-        const { start: a, end: b } = line1;
-        const { start: c, end: d } = line2;
-
-        const det = (b.x - a.x) * (d.y - c.y) - (b.y - a.y) * (d.x - c.x);
-        if (det === 0) return null; // Lines are parallel
-
-        const t = ((c.x - a.x) * (d.y - c.y) - (c.y - a.y) * (d.x - c.x)) / det;
-        const u = ((c.x - a.x) * (b.y - a.y) - (c.y - a.y) * (b.x - a.x)) / det;
-
-        if (t >= 0 && t <= 1 && u >= 0 && u <= 1) {
-            return {
-                x: a.x + t * (b.x - a.x),
-                y: a.y + t * (b.y - a.y),
-            };
-        }
-        return null;
-    }
+    // Log the loadShapeBoundary points for debugging
+    console.log("loadShapeBoundary points:", loadShapeBoundary);
 
     // Convert load shape boundary points into line segments
     const loadShapeLines = [];
     for (let i = 0; i < loadShapeBoundary.length - 1; i++) {
         const start = loadShapeBoundary[i];
         const end = loadShapeBoundary[i + 1];
-        loadShapeLines.push({ start, end });
+        loadShapeLines.push({ p1: start, p2: end }); // Use p1 and p2 format
     }
+
+    // Log the generated loadShapeLines for debugging
+    console.log("Generated loadShapeLines:", loadShapeLines);
 
     // Check each outline's left and right offset curves against the load shape boundary
     outlines.forEach((outline) => {
@@ -33,37 +21,41 @@ function checkPathIntersections(outlines, loadShapeBoundary, ctx) {
 
         // Check left offset curves
         left.forEach((leftCurve) => {
-            for (let t = 0; t < 1; t += 0.01) {
-                const start = leftCurve.get(t);
-                const end = leftCurve.get(t + 0.01);
-                const leftLine = { start, end };
-
-                loadShapeLines.forEach((loadShapeLine) => {
-                    const intersection = getIntersectionPoint(leftLine, loadShapeLine);
-                    if (intersection) {
-                        console.log("Intersection found on left offset:", intersection);
-                        plotIntersection(ctx, intersection);
-                    }
-                });
+            if (Array.isArray(leftCurve)) {
+                leftCurve.forEach((subCurve) => checkCurveIntersections(subCurve, loadShapeLines, ctx, "left"));
+            } else {
+                checkCurveIntersections(leftCurve, loadShapeLines, ctx, "left");
             }
         });
 
         // Check right offset curves
         right.forEach((rightCurve) => {
-            for (let t = 0; t < 1; t += 0.01) {
-                const start = rightCurve.get(t);
-                const end = rightCurve.get(t + 0.01);
-                const rightLine = { start, end };
-
-                loadShapeLines.forEach((loadShapeLine) => {
-                    const intersection = getIntersectionPoint(rightLine, loadShapeLine);
-                    if (intersection) {
-                        console.log("Intersection found on right offset:", intersection);
-                        plotIntersection(ctx, intersection);
-                    }
-                });
+            if (Array.isArray(rightCurve)) {
+                rightCurve.forEach((subCurve) => checkCurveIntersections(subCurve, loadShapeLines, ctx, "right"));
+            } else {
+                checkCurveIntersections(rightCurve, loadShapeLines, ctx, "right");
             }
         });
+    });
+}
+
+// Helper function to check intersections for a single curve
+function checkCurveIntersections(curve, loadShapeLines, ctx, side) {
+    if (!(curve instanceof Bezier)) {
+        console.error(`Invalid Bezier curve in ${side} offset:`, curve);
+        return;
+    }
+
+    loadShapeLines.forEach((line) => {
+        console.log(`Checking intersection with line on ${side} offset:`, line); // Debugging log
+        const intersections = curve.intersects(line); // Use line in p1, p2 format
+        if (intersections.length > 0) {
+            console.log(`Intersection found on ${side} offset:`, intersections);
+            intersections.forEach((t) => {
+                const point = curve.get(t);
+                plotIntersection(ctx, point);
+            });
+        }
     });
 }
 

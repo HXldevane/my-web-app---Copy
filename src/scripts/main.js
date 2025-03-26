@@ -6,7 +6,7 @@ import { Bezier } from "bezier-js"; // Correct import
 import { findIntersections } from "./calculate.js"; // Import the new function
 import { stopAnimations, kickAHT, callAHT, scheduler } from "./autonomy.js"; // Import scheduler function
 import { checkPathIntersections } from "./rules.js"; // Removed plotIntersections
-import { userPerformance, cuspInterceptLength } from "./estimator.js";
+import { userPerformance, cuspInterceptLength, queueInterceptLength } from "./estimator.js"; // Import queueInterceptLength
 
 let kickedBeenOnYellow = false; // Define as a global variable
 let loadShapePoints = null; // Define globally to ensure it is accessible in drawCanvas
@@ -188,6 +188,10 @@ document.addEventListener("DOMContentLoaded", () => {
             // Call cuspInterceptLength to calculate intersections
             const cuspIntercepts = cuspInterceptLength(curves, outlines);
             console.log("Cusp Intercepts:", cuspIntercepts);
+
+            // Call queueInterceptLength to calculate intersections
+            const queueIntercepts = queueInterceptLength(curves, outlines);
+            console.log("Queue Intercepts:", queueIntercepts);
 
             // Call userPerformance to evaluate performance
             userPerformance(curves, outlines, scale, ctx);

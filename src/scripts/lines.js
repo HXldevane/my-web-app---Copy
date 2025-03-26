@@ -209,10 +209,10 @@ function drawSplines(ctx, points, minRadius, drawOutlines = false) {
             drawCurve(ctx, curve);
 
             // Generate offset curves using bezier-js's .offset(d)
-            const leftOffsetCurves = curve.offset(15); // Offset 30px to the left
-            const rightOffsetCurves = curve.offset(-15); // Offset 30px to the right
+            const leftOffsetCurves = curve.offset(15); // Offset 15px to the left
+            const rightOffsetCurves = curve.offset(-15); // Offset 15px to the right
 
-            // Store the offset curves in testoutlines
+            // Store the offset curves in outlines
             outlines.push({ type: segment.type, left: leftOffsetCurves, right: rightOffsetCurves });
 
             // Draw the left offset curves
@@ -232,12 +232,10 @@ function drawSplines(ctx, points, minRadius, drawOutlines = false) {
                 drawOffsetCurve(ctx, offsetCurve);
             });
             ctx.restore();
-
-            
         }
     });
 
-    return { curves, outlines }; // Return curves, outlines, and testoutlines
+    return { curves, outlines }; // Return curves and outlines
 }
 
 export { drawSplines, createCuspToSpotCurve };
