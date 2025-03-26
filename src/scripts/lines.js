@@ -188,7 +188,7 @@ function createCuspToSpotCurve(ctx, cusp, spot, minRadius) {
     return curve;
 }
 
-function drawSplines(ctx, points, minRadius, drawOutlines = false) {
+function drawSplines(ctx, points, minRadius, showOffsets = false) {
     const segments = [
         { start: points[0], end: points[1], type: "entry-to-queue" },
         { start: points[1], end: points[2], type: "queue-to-cusp" },
@@ -215,23 +215,25 @@ function drawSplines(ctx, points, minRadius, drawOutlines = false) {
             // Store the offset curves in outlines
             outlines.push({ type: segment.type, left: leftOffsetCurves, right: rightOffsetCurves });
 
-            // Draw the left offset curves
-            ctx.save();
-            ctx.strokeStyle = "green"; // Green for left offset
-            ctx.lineWidth = 2;
-            leftOffsetCurves.forEach((offsetCurve) => {
-                drawOffsetCurve(ctx, offsetCurve);
-            });
-            ctx.restore();
+            if (showOffsets) {
+                // Draw the left offset curves
+                ctx.save();
+                ctx.strokeStyle = "green"; // Green for left offset
+                ctx.lineWidth = 2;
+                leftOffsetCurves.forEach((offsetCurve) => {
+                    drawOffsetCurve(ctx, offsetCurve);
+                });
+                ctx.restore();
 
-            // Draw the right offset curves
-            ctx.save();
-            ctx.strokeStyle = "orange"; // Orange for right offset
-            ctx.lineWidth = 2;
-            rightOffsetCurves.forEach((offsetCurve) => {
-                drawOffsetCurve(ctx, offsetCurve);
-            });
-            ctx.restore();
+                // Draw the right offset curves
+                ctx.save();
+                ctx.strokeStyle = "orange"; // Orange for right offset
+                ctx.lineWidth = 2;
+                rightOffsetCurves.forEach((offsetCurve) => {
+                    drawOffsetCurve(ctx, offsetCurve);
+                });
+                ctx.restore();
+            }
         }
     });
 

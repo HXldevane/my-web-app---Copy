@@ -5,6 +5,27 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Control Point Webpage</title>
     <link rel="stylesheet" href="styles/style.css">
+    <style>
+        #top-right-display {
+            display: flex;
+            justify-content: center;
+            gap: 30px; /* Increased gap for more space */
+            position: absolute;
+            top: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: white;
+            padding: 10px;
+            border: 2px solid black;
+            border-radius: 5px;
+            font-family: Arial, sans-serif;
+            font-size: 14px;
+            width: 80%; /* Make the display wider */
+        }
+        #top-right-display div {
+            text-align: center;
+        }
+    </style>
 </head>
 <body>
     <div id="app-container">
@@ -17,6 +38,14 @@
             <button id="simulate-btn">Simulate</button> <!-- New button -->
             <button id="difficulty-btn">Difficulty: Easy</button> <!-- New button -->
         </div>
+    </div>
+    <div id="top-right-display">
+        <div><strong>Truck Exchange Time:</strong> - (s)</div>
+        <div><strong>Time to Spot:</strong> - (s)</div>
+        <div><strong>Time to Queue:</strong> - (s)</div> <!-- New metric -->
+        <div><strong>Cusp Wait:</strong> - (s)</div> <!-- New metric -->
+        <div><strong>Queue Wait:</strong> - (s)</div> <!-- New metric -->
+        <div><strong>Tonnes per Hour:</strong> -</div>
     </div>
     <script type="module" src="scripts/main.js"></script>
 </body>
