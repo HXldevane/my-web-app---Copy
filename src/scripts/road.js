@@ -1,4 +1,3 @@
-import { Bezier } from "bezier-js";
 
 function generateRandomRoad(canvasHeight, scale) {
     const angle = Math.random() * 60 - 30; // Random angle between -30 and 30 degrees

@@ -1,4 +1,3 @@
-import { Bezier } from "bezier-js";
 import myImageUrl from './truck.png';
 
 let kickAnimationId = null;
@@ -194,24 +193,6 @@ function scheduler(ctx, cuspToSpotCurve, spotToExitCurve, exitToExitCurve, cuspT
     });
 }
 
-function isOnYellowHighlight(position, polygonPoints) {
-    let isInside = false;
-    for (let i = 0, j = polygonPoints.length - 1; i < polygonPoints.length; j = i++) {
-        const xi = polygonPoints[i].x, yi = polygonPoints[i].y;
-        const xj = polygonPoints[j].x, yj = polygonPoints[j].y;
-
-        // Check if the position is inside the polygon using the ray-casting algorithm
-        const intersect = ((yi > position.y) !== (yj > position.y)) &&
-            (position.x < ((xj - xi) * (position.y - yi)) / (yj - yi) + xi);
-        if (intersect) isInside = !isInside;
-    }
-
-    if (isInside) {
-        console.log(`Truck is on the yellow highlight. Number of polygon points: ${polygonPoints.length}`);
-    }
-
-    return isInside;
-}
 
 function calcTruckExchange() {
     // Placeholder for truck exchange calculation logic

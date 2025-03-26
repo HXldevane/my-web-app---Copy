@@ -1,8 +1,3 @@
-import { Bezier } from "bezier-js"; // Ensure Bezier is imported
-
-
-
-
 // Function to calculate the pixel length of the path
 function calculatePathLength(pathPoints, scale) {
     let totalLength = 0;
@@ -111,42 +106,42 @@ function userPerformance(curves, cuspOutlines, scale, ctx) {
 
 // Function to calculate the length of the exit path (spot to road exit)
 function exitPathLength(curves, scale) {
-    const spotToExitCurve = curves[3]?.curve; // Assuming index 3 is "spot-to-exit"
-    const exitToRoadExitCurve = curves[4]?.curve; // Assuming index 4 is "exit-to-road-exit"
+    const spotToExitCurve = curves.find((curve) => curve.type === "spot-to-exit")?.path;
+    const exitToRoadExitCurve = curves.find((curve) => curve.type === "exit-to-exit")?.path;
 
     if (!spotToExitCurve || !exitToRoadExitCurve) {
         console.error("Required curves for exit path not found.");
-        return null;
+        return 0; // Return 0 instead of null to avoid further errors
     }
 
-    const spotToExitLength = spotToExitCurve.length() / scale;
-    const exitToRoadExitLength = exitToRoadExitCurve.length() / scale;
+    const spotToExitLength = calculatePathLength(spotToExitCurve, scale);
+    const exitToRoadExitLength = calculatePathLength(exitToRoadExitCurve, scale);
 
     return spotToExitLength + exitToRoadExitLength;
 }
 
 // Function to calculate the length of the cusp path (cusp to spot)
 function cuspPathLength(curves, scale) {
-    const cuspToSpotCurve = curves[2]?.curve; // Assuming index 2 is "cusp-to-spot"
+    const cuspToSpotCurve = curves.find((curve) => curve.type === "cusp-to-spot-opposite")?.path;
 
     if (!cuspToSpotCurve) {
         console.error("Cusp-to-spot curve not found.");
-        return null;
+        return 0; // Return 0 instead of null to avoid further errors
     }
 
-    return cuspToSpotCurve.length() / scale;
+    return calculatePathLength(cuspToSpotCurve, scale);
 }
 
 // Function to calculate the length of the queue path (queue to cusp)
 function queuePathLength(curves, scale) {
-    const queueToCuspCurve = curves[1]?.curve; // Assuming index 1 is "queue-to-cusp"
+    const queueToCuspCurve = curves.find((curve) => curve.type === "queue-to-cusp")?.path;
 
     if (!queueToCuspCurve) {
         console.error("Queue-to-cusp curve not found.");
-        return null;
+        return 0; // Return 0 instead of null to avoid further errors
     }
 
-    return queueToCuspCurve.length() / scale;
+    return calculatePathLength(queueToCuspCurve, scale);
 }
 
 // Function to calculate the longest cusp intercept length
@@ -160,7 +155,7 @@ function cuspInterceptLength(curves, cuspOutlines) {
         return { leftIntersections: [], rightIntersections: [], furthestDistance: 0 };
     }
 
-    const cuspToSpotCurve = curves.find((curve) => curve.type === "cusp-to-spot-opposite")?.curve;
+    const cuspToSpotCurve = curves.find((curve) => curve.type === "cusp-to-spot-opposite")?.path;
 
     if (!cuspToSpotCurve) {
         console.error("Cusp-to-spot curve not found.");
@@ -168,27 +163,32 @@ function cuspInterceptLength(curves, cuspOutlines) {
     }
 
     // Helper function to find intersections and calculate distances
-    function findIntersectionsAndDistances(curve, otherCurves) {
+    function findIntersectionsAndDistances(pathPoints, outlinePoints) {
         const intersections = [];
         let maxDistance = 0;
 
-        otherCurves.forEach((otherCurve) => {
-            const intersectionTs = curve.intersects(otherCurve);
-            intersectionTs.forEach((t) => {
-                const point = curve.get(t);
-                const distance = curve.length(0, t); // Distance from the start of the curve to the intersection
-                intersections.push({ point, distance });
-                if (distance > maxDistance) {
-                    maxDistance = distance;
+        for (let i = 0; i < pathPoints.length - 1; i++) {
+            const segment = { p1: pathPoints[i], p2: pathPoints[i + 1] };
+
+            for (let j = 0; j < outlinePoints.length - 1; j++) {
+                const outlineSegment = { p1: outlinePoints[j], p2: outlinePoints[j + 1] };
+                const intersection = getLineIntersection(segment.p1, segment.p2, outlineSegment.p1, outlineSegment.p2);
+
+                if (intersection) {
+                    const distance = calculateSegmentLength(pathPoints[0], intersection);
+                    intersections.push({ point: intersection, distance });
+                    if (distance > maxDistance) {
+                        maxDistance = distance;
+                    }
                 }
-            });
-        });
+            }
+        }
 
         return { intersections, maxDistance };
     }
 
-    const leftResults = findIntersectionsAndDistances(cuspToSpotCurve, [...spotToExitOutline.left, ...exitToRoadExitOutline.left]);
-    const rightResults = findIntersectionsAndDistances(cuspToSpotCurve, [...spotToExitOutline.right, ...exitToRoadExitOutline.right]);
+    const leftResults = findIntersectionsAndDistances(cuspToSpotCurve, cuspToSpotOutline.left);
+    const rightResults = findIntersectionsAndDistances(cuspToSpotCurve, cuspToSpotOutline.right);
 
     const furthestDistance = Math.max(leftResults.maxDistance, rightResults.maxDistance);
 
@@ -207,7 +207,7 @@ function queueInterceptLength(curves, cuspOutlines) {
         return { leftIntersections: [], rightIntersections: [], furthestDistance: 0 };
     }
 
-    const queueToCuspCurve = curves.find((curve) => curve.type === "queue-to-cusp")?.curve;
+    const queueToCuspCurve = curves.find((curve) => curve.type === "queue-to-cusp")?.path;
 
     if (!queueToCuspCurve) {
         console.error("Queue-to-cusp curve not found.");
@@ -215,33 +215,61 @@ function queueInterceptLength(curves, cuspOutlines) {
     }
 
     // Helper function to find intersections and calculate distances
-    function findIntersectionsAndDistances(curve, otherCurves) {
+    function findIntersectionsAndDistances(pathPoints, outlinePoints) {
         const intersections = [];
         let maxDistance = 0;
 
-        otherCurves.forEach((otherCurve) => {
-            const intersectionTs = curve.intersects(otherCurve);
-            intersectionTs.forEach((t) => {
-                const point = curve.get(t);
-                const distance = curve.length(0, t); // Distance from the start of the curve to the intersection
-                intersections.push({ point, distance });
-                if (distance > maxDistance) {
-                    maxDistance = distance;
+        for (let i = 0; i < pathPoints.length - 1; i++) {
+            const segment = { p1: pathPoints[i], p2: pathPoints[i + 1] };
+
+            for (let j = 0; j < outlinePoints.length - 1; j++) {
+                const outlineSegment = { p1: outlinePoints[j], p2: outlinePoints[j + 1] };
+                const intersection = getLineIntersection(segment.p1, segment.p2, outlineSegment.p1, outlineSegment.p2);
+
+                if (intersection) {
+                    const distance = calculateSegmentLength(pathPoints[0], intersection);
+                    intersections.push({ point: intersection, distance });
+                    if (distance > maxDistance) {
+                        maxDistance = distance;
+                    }
                 }
-            });
-        });
+            }
+        }
 
         return { intersections, maxDistance };
     }
 
-    const leftResults = findIntersectionsAndDistances(queueToCuspCurve, [...spotToExitOutline.left, ...exitToRoadExitOutline.left]);
-    const rightResults = findIntersectionsAndDistances(queueToCuspCurve, [...spotToExitOutline.right, ...exitToRoadExitOutline.right]);
+    const leftResults = findIntersectionsAndDistances(queueToCuspCurve, queueToCuspOutline.left);
+    const rightResults = findIntersectionsAndDistances(queueToCuspCurve, queueToCuspOutline.right);
 
     const furthestDistance = Math.max(leftResults.maxDistance, rightResults.maxDistance);
 
     console.log(`Furthest Queue Intersection Distance: ${furthestDistance.toFixed(2)} meters`);
 
     return { leftIntersections: leftResults.intersections, rightIntersections: rightResults.intersections, furthestDistance };
+}
+
+// Helper function to calculate the length of a segment
+function calculateSegmentLength(p1, p2) {
+    return Math.sqrt((p2.x - p1.x) ** 2 + (p2.y - p1.y) ** 2);
+}
+
+// Helper function to calculate the intersection point of two line segments
+function getLineIntersection(p1, p2, p3, p4) {
+    const denominator = (p1.x - p2.x) * (p3.y - p4.y) - (p1.y - p2.y) * (p3.x - p4.x);
+    if (denominator === 0) return null; // Parallel lines
+
+    const t = ((p1.x - p3.x) * (p3.y - p4.y) - (p1.y - p3.y) * (p3.x - p4.x)) / denominator;
+    const u = -((p1.x - p2.x) * (p1.y - p3.y) - (p1.y - p2.y) * (p1.x - p3.x)) / denominator;
+
+    if (t >= 0 && t <= 1 && u >= 0 && u <= 1) {
+        return {
+            x: p1.x + t * (p2.x - p1.x),
+            y: p1.y + t * (p2.y - p1.y),
+        };
+    }
+
+    return null;
 }
 
 // Helper function to highlight an intersection

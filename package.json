@@ -6,8 +6,10 @@
   "scripts": {
     "dev": "vite"
   },
-  "dependencies": {},
   "devDependencies": {
     "vite": "^4.0.0"
+  },
+  "dependencies": {
+    "dubins-js": "^0.0.7"
   }
 }
