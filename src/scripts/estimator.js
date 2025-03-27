@@ -83,25 +83,13 @@ function userPerformance(curves, cuspOutlines, scale, ctx) {
     const queueTime = calculateTimeForDistance(queueLength, reverseAcceleration, reverseDeceleration, maxReverseSpeed);
     const cuspTime = calculateTimeForDistance(cuspLength, emptyAcceleration, emptyDeceleration, maxReverseSpeed);
 
-    const cuspWaitTime = calculateTimeForDistance(cuspIntercept.furthestDistance, reverseAcceleration, reverseDeceleration, maxReverseSpeed);
-    const queueWaitTime = calculateTimeForDistance(queueIntercept.furthestDistance, emptyAcceleration, emptyDeceleration, maxForwardSpeed);
+    const cuspWaitTime = calculateTimeForDistance(cuspIntercept.furthestDistance, emptyAcceleration, 0, maxForwardSpeed);
+    const queueWaitTime = calculateTimeForDistance(queueIntercept.furthestDistance, emptyAcceleration, 0, maxForwardSpeed);
 
     const totalTime = exitTime + queueTime + cuspTime + cuspWaitTime + queueWaitTime;
     const spotTime = cuspTime + cuspWaitTime;
 
     const tonnesPerHour = calculateTonnesPerHour(spotTime); // Calculate Tonnes per Hour
-
-    console.log(`Total Time: ${totalTime.toFixed(2)} seconds`);
-    console.log(`Spot Time: ${spotTime.toFixed(2)} seconds`);
-    console.log(`Exit Time: ${exitTime.toFixed(2)} seconds`);
-    console.log(`Queue Time: ${queueTime.toFixed(2)} seconds`);
-    console.log(`Cusp Wait Time: ${cuspWaitTime.toFixed(2)} seconds`);
-    console.log(`Queue Wait Time: ${queueWaitTime.toFixed(2)} seconds`);
-    console.log(`Tonnes per Hour: ${tonnesPerHour.toFixed(2)}`);
-
-
-    
-
 
     return { totalTime, spotTime, exitTime, queueTime, cuspWaitTime, queueWaitTime, tonnesPerHour };
 }
@@ -112,7 +100,6 @@ function exitPathLength(curves, scale) {
     const exitToRoadExitCurve = curves.find((curve) => curve.type === "exit-to-exit")?.path;
 
     if (!spotToExitCurve || !exitToRoadExitCurve) {
-        console.error("Required curves for exit path not found.");
         return 0; // Return 0 instead of null to avoid further errors
     }
 
@@ -127,7 +114,6 @@ function cuspPathLength(curves, scale) {
     const cuspToSpotCurve = curves.find((curve) => curve.type === "cusp-to-spot-opposite")?.path;
 
     if (!cuspToSpotCurve) {
-        console.error("Cusp-to-spot curve not found.");
         return 0; // Return 0 instead of null to avoid further errors
     }
 
@@ -139,7 +125,6 @@ function queuePathLength(curves, scale) {
     const queueToCuspCurve = curves.find((curve) => curve.type === "queue-to-cusp")?.path;
 
     if (!queueToCuspCurve) {
-        console.error("Queue-to-cusp curve not found.");
         return 0; // Return 0 instead of null to avoid further errors
     }
 
@@ -148,146 +133,157 @@ function queuePathLength(curves, scale) {
 
 // Function to calculate the longest cusp intercept length
 function cuspInterceptLength(curves, cuspOutlines, ctx) {
-    if (!ctx) {
-        console.error("Canvas context (ctx) is undefined.");
-        return { intersections: [], furthestDistance: 0 };
-    }
-
-    const cuspToSpotOutline = cuspOutlines.find((outline) => outline.type === "cusp-to-spot-opposite");
+    const exitToRoadExitOutline = cuspOutlines.find((outline) => outline.type === "exit-to-exit");
     const spotToExitOutline = cuspOutlines.find((outline) => outline.type === "spot-to-exit");
+    const cuspToSpotOutline = cuspOutlines.find((outline) => outline.type === "cusp-to-spot-opposite");
 
-    if (!cuspToSpotOutline || !spotToExitOutline) {
+    if (!exitToRoadExitOutline || !spotToExitOutline || !cuspToSpotOutline) {
         console.error("Required outlines for cusp intercept calculation are missing.");
         return { intersections: [], furthestDistance: 0 };
     }
 
-    const cuspToSpotCurve = curves.find((curve) => curve.type === "cusp-to-spot-opposite")?.path;
+    const spotPoint = curves.find((curve) => curve.type === "spot-to-exit")?.path[0];
 
-    if (!cuspToSpotCurve) {
-        console.error("Cusp-to-spot curve not found.");
+    if (!spotPoint) {
+        console.error("Spot point not found.");
         return { intersections: [], furthestDistance: 0 };
     }
 
-    const intersections = [];
-    let furthestDistance = 0;
+    const { left: exitLeft, right: exitRight } = exitToRoadExitOutline;
+    const { left: spotLeft, right: spotRight } = spotToExitOutline;
+    const { left: cuspLeft, right: cuspRight } = cuspToSpotOutline;
 
-    // Check intersections for both sides of cusp-to-spot with both sides of spot-to-exit
-    [cuspToSpotOutline.left, cuspToSpotOutline.right].forEach((cuspSide) => {
-        cuspSide?.forEach((point, index) => {
-            if (index < cuspSide.length - 1) {
-                const segment = { p1: point, p2: cuspSide[index + 1] };
+    let intersectionFound = null;
 
-                [spotToExitOutline.left, spotToExitOutline.right].forEach((spotSide) => {
-                    spotSide?.forEach((outlinePoint, outlineIndex) => {
-                        if (outlineIndex < spotSide.length - 1) {
-                            const outlineSegment = { p1: outlinePoint, p2: spotSide[outlineIndex + 1] };
-                            const intersection = getLineIntersection(segment.p1, segment.p2, outlineSegment.p1, outlineSegment.p2);
-
-                            if (intersection) {
-                                intersections.push(intersection);
-                                plotIntersection(ctx, intersection, "red"); // Plot intersection
-                                const distance = calculateSegmentLength(cuspToSpotCurve[0], intersection);
-                                furthestDistance = Math.max(furthestDistance, distance);
-                            }
-                        }
-                    });
-                });
+    // Function to check if a segment intersects with cusp outlines
+    function checkSegment(segment) {
+        for (const cuspSide of [cuspLeft, cuspRight]) {
+            for (let i = 0; i < cuspSide.length - 1; i++) {
+                const cuspSegment = { p1: cuspSide[i], p2: cuspSide[i + 1] };
+                const intersection = getLineIntersection(segment.p1, segment.p2, cuspSegment.p1, cuspSegment.p2);
+                if (intersection) {
+                    return intersection;
+                }
             }
-        });
-    });
-
-    // Draw dots along the path from the spot to the furthest intersection
-    intersections.forEach((intersection) => {
-        const distance = calculateSegmentLength(cuspToSpotCurve[0], intersection);
-        if (distance === furthestDistance) {
-            ctx.beginPath();
-            ctx.arc(intersection.x, intersection.y, 5, 0, Math.PI * 2);
-            ctx.fillStyle = "red";
-            ctx.fill();
-            ctx.closePath();
         }
-    });
+        return null;
+    }
 
-    console.log(`Furthest Intersection Distance (Cusp): ${furthestDistance.toFixed(2)} units`);
+    // Helper to traverse an outline backward and find the first intersection
+    function findIntersection(outline) {
+        for (let i = outline.length - 1; i > 0; i--) {
+            const segment = { p1: outline[i], p2: outline[i - 1] };
+            const intersection = checkSegment(segment);
+            if (intersection) return intersection;
+        }
+        return null;
+    }
 
-    return { intersections, furthestDistance };
+    // Check `exit-to-road-exit` outline
+    for (const exitSide of [exitLeft, exitRight]) {
+        intersectionFound = findIntersection(exitSide);
+        if (intersectionFound) break;
+    }
+
+    // If no intersection found, check `spot-to-exit` outline
+    if (!intersectionFound) {
+        for (const spotSide of [spotLeft, spotRight]) {
+            intersectionFound = findIntersection(spotSide);
+            if (intersectionFound) break;
+        }
+    }
+
+    // Plot the line from the spot point to the intersection if found
+    if (intersectionFound && ctx) {
+        ctx.beginPath();
+        ctx.moveTo(spotPoint.x, spotPoint.y);
+        ctx.lineTo(intersectionFound.x, intersectionFound.y);
+        ctx.strokeStyle = "red"; // Red line for cusp intercept
+        ctx.lineWidth = 2;
+        ctx.stroke();
+        ctx.closePath();
+    } else {
+        console.log("No intersections found between exit-to-road-exit/spot-to-exit and cusp outlines.");
+    }
+
+    return { intersections: intersectionFound ? [intersectionFound] : [], furthestDistance: intersectionFound ? calculateSegmentLength(spotPoint, intersectionFound) : 0 };
 }
 
 function queueInterceptLength(curves, cuspOutlines, ctx) {
-    if (!ctx) {
-        console.error("Canvas context (ctx) is undefined.");
-        return { intersections: [], furthestDistance: 0 };
-    }
-
+    const exitToRoadExitOutline = cuspOutlines.find((outline) => outline.type === "exit-to-exit");
     const queueToCuspOutline = cuspOutlines.find((outline) => outline.type === "queue-to-cusp");
     const spotToExitOutline = cuspOutlines.find((outline) => outline.type === "spot-to-exit");
-    const exitToRoadExitOutline = cuspOutlines.find((outline) => outline.type === "exit-to-exit");
 
-    if (!queueToCuspOutline || !spotToExitOutline || !exitToRoadExitOutline) {
+    if (!exitToRoadExitOutline || !queueToCuspOutline || !spotToExitOutline) {
         console.error("Required outlines for queue intercept calculation are missing.");
         return { intersections: [], furthestDistance: 0 };
     }
 
-    const queueToCuspCurve = curves.find((curve) => curve.type === "queue-to-cusp")?.path;
-    const spotToExitCurve = curves.find((curve) => curve.type === "spot-to-exit")?.path;
+    const spotPoint = curves.find((curve) => curve.type === "spot-to-exit")?.path[0];
 
-    if (!queueToCuspCurve || !spotToExitCurve) {
-        console.error("Required curves for queue-to-cusp or spot-to-exit are missing.");
+    if (!spotPoint) {
+        console.error("Spot point not found.");
         return { intersections: [], furthestDistance: 0 };
     }
 
-    const intersections = [];
-    let furthestDistance = 0;
+    const { left: exitLeft, right: exitRight } = exitToRoadExitOutline;
+    const { left: queueLeft, right: queueRight } = queueToCuspOutline;
+    const { left: spotLeft, right: spotRight } = spotToExitOutline;
 
-    // Check intersections for both sides of queue-to-cusp with both sides of spot-to-exit and exit-to-road-exit
-    [queueToCuspOutline.left, queueToCuspOutline.right].forEach((queueSide) => {
-        queueSide?.forEach((point, index) => {
-            if (index < queueSide.length - 1) {
-                const segment = { p1: point, p2: queueSide[index + 1] };
+    let intersectionFound = null;
 
-                // Check against spot-to-exit outline
-                [spotToExitOutline.left, spotToExitOutline.right].forEach((spotSide) => {
-                    spotSide?.forEach((outlinePoint, outlineIndex) => {
-                        if (outlineIndex < spotSide.length - 1) {
-                            const outlineSegment = { p1: outlinePoint, p2: spotSide[outlineIndex + 1] };
-                            const intersection = getLineIntersection(segment.p1, segment.p2, outlineSegment.p1, outlineSegment.p2);
-
-                            if (intersection) {
-                                intersections.push(intersection);
-                                plotIntersection(ctx, intersection, "blue"); // Plot intersection
-                                const distance = calculateSegmentLength(queueToCuspCurve[0], intersection);
-                                furthestDistance = Math.max(furthestDistance, distance);
-                            }
-                        }
-                    });
-                });
-
-                // Check against exit-to-road-exit outline
-                [exitToRoadExitOutline.left, exitToRoadExitOutline.right].forEach((exitSide) => {
-                    exitSide?.forEach((outlinePoint, outlineIndex) => {
-                        if (outlineIndex < exitSide.length - 1) {
-                            const outlineSegment = { p1: outlinePoint, p2: exitSide[outlineIndex + 1] };
-                            const intersection = getLineIntersection(segment.p1, segment.p2, outlineSegment.p1, outlineSegment.p2);
-
-                            if (intersection) {
-                                intersections.push(intersection);
-                                plotIntersection(ctx, intersection, "blue"); // Plot intersection
-
-                                // Add the distance from the spot to the exit
-                                const distanceToExit = calculatePathLength(spotToExitCurve, 1); // Scale = 1 for raw pixel distance
-                                const distance = calculateSegmentLength(queueToCuspCurve[0], intersection) + distanceToExit;
-                                furthestDistance = Math.max(furthestDistance, distance);
-                            }
-                        }
-                    });
-                });
+    // Function to check if a segment intersects with queue outlines
+    function checkSegment(segment) {
+        for (const queueSide of [queueLeft, queueRight]) {
+            for (let i = 0; i < queueSide.length - 1; i++) {
+                const queueSegment = { p1: queueSide[i], p2: queueSide[i + 1] };
+                const intersection = getLineIntersection(segment.p1, segment.p2, queueSegment.p1, queueSegment.p2);
+                if (intersection) {
+                    return intersection;
+                }
             }
-        });
-    });
+        }
+        return null;
+    }
 
-    console.log(`Corrected Furthest Intersection Distance (Queue): ${furthestDistance.toFixed(2)} units`);
+    // Helper to traverse an outline backward and find the first intersection
+    function findIntersection(outline) {
+        for (let i = outline.length - 1; i > 0; i--) {
+            const segment = { p1: outline[i], p2: outline[i - 1] };
+            const intersection = checkSegment(segment);
+            if (intersection) return intersection;
+        }
+        return null;
+    }
 
-    return { intersections, furthestDistance };
+    // Check `exit-to-road-exit` outline
+    for (const exitSide of [exitLeft, exitRight]) {
+        intersectionFound = findIntersection(exitSide);
+        if (intersectionFound) break;
+    }
+
+    // If no intersection found, check `spot-to-exit` outline
+    if (!intersectionFound) {
+        for (const spotSide of [spotLeft, spotRight]) {
+            intersectionFound = findIntersection(spotSide);
+            if (intersectionFound) break;
+        }
+    }
+
+    // Plot the line from the spot point to the intersection if found
+    if (intersectionFound && ctx) {
+        ctx.beginPath();
+        ctx.moveTo(spotPoint.x, spotPoint.y);
+        ctx.lineTo(intersectionFound.x, intersectionFound.y);
+        ctx.strokeStyle = "blue"; // Blue line for queue intercept
+        ctx.lineWidth = 2;
+        ctx.stroke();
+        ctx.closePath();
+    } else {
+        console.log("No intersections found between exit-to-road-exit/spot-to-exit and queue outlines.");
+    }
+
+    return { intersections: intersectionFound ? [intersectionFound] : [], furthestDistance: intersectionFound ? calculateSegmentLength(spotPoint, intersectionFound) : 0 };
 }
 
 // Helper function to calculate the length of a segment
@@ -314,33 +310,6 @@ function getLineIntersection(p1, p2, p3, p4) {
     return null;
 }
 
-// Helper function to highlight an intersection
-function highlightIntersection(intersection, color) {
-    const canvas = document.getElementById("canvas");
-    const ctx = canvas.getContext("2d");
-
-    ctx.beginPath();
-    ctx.arc(intersection.x, intersection.y, 7, 0, Math.PI * 2);
-    ctx.fillStyle = color; // Highlight color
-    ctx.fill();
-    ctx.closePath();
-}
-
-// Helper function to plot a dot at the intersection point
-function plotIntersection(ctx, point, color) {
-    if (!ctx) {
-        console.error("Canvas context (ctx) is undefined in plotIntersection.");
-        return;
-    }
-
-    ctx.beginPath();
-    ctx.arc(point.x, point.y, 5, 0, Math.PI * 2);
-    ctx.fillStyle = color; // Use the provided color
-    ctx.fill();
-    ctx.closePath();
-}
-
-// Export the functions
 export { 
     calculatePathLength, 
     userPerformance, 

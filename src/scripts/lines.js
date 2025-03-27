@@ -53,10 +53,11 @@ function drawSplines(ctx, points, minRadius, showOffsets = false) {
             );
 
             const pathPoints = [];
-            for (let dist = 0; dist <= shortpath.length; dist += 0.1) {
+            for (let dist = 0; dist <= shortpath.length; dist += 3) {
                 pathPoints.push(shortpath.pointAtLength(dist));
+                
             }
-
+            console.log(shortpath.length);
             curves.push({ type: segment.type, path: pathPoints });
         } else {
             console.warn(`Invalid segment: ${segment.type}`, segment);
@@ -88,6 +89,7 @@ function drawSplines(ctx, points, minRadius, showOffsets = false) {
             for (let dist = 0; dist <= totalLength; dist += 0.1) {
                 const pt = shortpath.pointAtLength(dist);
                 pathPoints.push({ x: pt.x, y: pt.y, psi: pt.psi });
+                console
             }
 
             // Ensure exact end point alignment
