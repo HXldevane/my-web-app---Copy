@@ -1,4 +1,5 @@
-import { Dubins } from 'dubins-js';
+import { Dubins } from '../libs/dubins.js';
+
 
 function generateLines(points) {
     const lines = [];

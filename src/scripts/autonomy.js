@@ -1,4 +1,3 @@
-import myImageUrl from './truck.png';
 
 let kickAnimationId = null;
 let callAnimationId = null;
@@ -49,52 +48,6 @@ function kickAHT(ctx, spotToExitCurve, exitToExitCurve, cuspToSpotCurve, cuspToS
         });
     }, cuspWaitTime * 1000 / speedFactor); // Convert seconds to milliseconds and scale by speedFactor
 
-    function animate(time) {
-        const elapsed = time - startTime;
-        const t = Math.min(elapsed / totalDuration, 1); // Normalize time to [0, 1]
-
-        let position, tangent;
-        if (t <= spotToExitCurve.length() / totalLength) {
-            const normalizedT = t / (spotToExitCurve.length() / totalLength);
-            position = spotToExitCurve.get(normalizedT);
-            tangent = spotToExitCurve.derivative(normalizedT);
-        } else {
-            const normalizedT = (t - spotToExitCurve.length() / totalLength) / (exitToExitCurve.length() / totalLength);
-            position = exitToExitCurve.get(normalizedT);
-            tangent = exitToExitCurve.derivative(normalizedT);
-        }
-
-        const angle = Math.atan2(tangent.y, tangent.x) + Math.PI / 2; // Rotate by 90 degrees
-
-        // Clear the previous truck position
-        ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
-
-        // Redraw the canvas elements (e.g., road, points, splines)
-        drawCanvas();
-
-        // Draw the truck at the new position with rotation
-        ctx.save();
-        ctx.translate(position.x, position.y); // Move to the truck's position
-        ctx.rotate(angle); // Rotate the truck to align with the path
-        ctx.drawImage(truckImage, -12.5, -10, 25, 40); // Draw the truck image centered
-        ctx.restore();
-
-        if (t < 1) {
-            kickAnimationId = requestAnimationFrame(animate);
-        } else if (onComplete) {
-            console.log("Kick AHT completed.");
-            onComplete();
-        }
-    }
-
-    truckImage.onload = () => {
-        console.log("Truck image loaded successfully.");
-        kickAnimationId = requestAnimationFrame(animate);
-    };
-
-    truckImage.onerror = () => {
-        console.error("Failed to load truck image. Ensure 'truck.png' is in the correct path.");
-    };
 }
 
 function intersectsOutline(position, outline, threshold) {
