@@ -59,7 +59,7 @@ function calculateTonnesPerHour(spotTime) {
 }
 
 // Function to evaluate user performance
-function userPerformance(curves, cuspOutlines, scale, ctx) {
+function userPerformance(curves, cuspOutlines, scale, ctx, speedLimit) {
     const exitLength = exitPathLength(curves, scale);
     const queueLength = queuePathLength(curves, scale);
     const cuspLength = cuspPathLength(curves, scale);
@@ -72,7 +72,8 @@ function userPerformance(curves, cuspOutlines, scale, ctx) {
     const emptyDeceleration = 2 / 3.6; // m/s² -> kphh
     const loadedAcceleration = 2 / 3.6; // m/s² -> kphh
     const loadedDeceleration = 2 / 3.6; // m/s² -> kphh
-    const maxForwardSpeed = 30 / 3.6; // m/s -> kph
+    const maxForwardSpeed = speedLimit / 3.6; // Convert kph to m/s
+    console.log(speedLimit);
 
     const reverseAcceleration = 1 / 3.6; // m/s² -> kphh
     const reverseDeceleration = 1 / 3.6; // m/s² -> kphh
@@ -80,7 +81,7 @@ function userPerformance(curves, cuspOutlines, scale, ctx) {
 
     // Calculate and log time for each path
     const exitTime = calculateTimeForDistance(exitLength, loadedAcceleration, 0, maxForwardSpeed);
-    const queueTime = calculateTimeForDistance(queueLength, reverseAcceleration, reverseDeceleration, maxReverseSpeed);
+    const queueTime = calculateTimeForDistance(queueLength, reverseAcceleration, reverseDeceleration, maxForwardSpeed);
     const cuspTime = calculateTimeForDistance(cuspLength, emptyAcceleration, emptyDeceleration, maxReverseSpeed);
 
     const cuspWaitTime = calculateTimeForDistance(cuspIntercept.furthestDistance, emptyAcceleration, 0, maxForwardSpeed);

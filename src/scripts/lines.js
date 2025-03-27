@@ -57,7 +57,6 @@ function drawSplines(ctx, points, minRadius, showOffsets = false) {
                 pathPoints.push(shortpath.pointAtLength(dist));
                 
             }
-            console.log(shortpath.length);
             curves.push({ type: segment.type, path: pathPoints });
         } else {
             console.warn(`Invalid segment: ${segment.type}`, segment);

@@ -1,10 +1,11 @@
 import { drawSplines } from "./lines.js";
-import { generateAllRoadPoints, drawRoad, generateLoadShape } from "./road.js"; // Updated imports
-import { generateSpot, drawSpot } from "./spot.js";
+import { generateAllRoadPoints, drawRoad, generateLoadShape } from "./road.js";
+import { generateSpot, drawSpot } from "./spot.js"; // Removed duplicate drawSpeedLimit import
 import { initializePoints, resetPoints, drawQueue, drawCusp, drawExit } from "./points.js";
-import { stopAnimations, kickAHT, callAHT, scheduler } from "./autonomy.js"; // Import scheduler function
-import { checkPathIntersections } from "./rules.js"; // Removed plotIntersections
-import { userPerformance, cuspInterceptLength, queueInterceptLength } from "./estimator.js"; // Import queueInterceptLength
+import { stopAnimations, kickAHT, callAHT, scheduler } from "./autonomy.js";
+import { checkPathIntersections } from "./rules.js";
+import { userPerformance, cuspInterceptLength, queueInterceptLength } from "./estimator.js";
+import { generateSpeedLimit, drawSpeedLimit } from "./spot.js"; // Retained this import for drawSpeedLimit
 
 let kickedBeenOnYellow = false; // Define as a global variable
 let loadShapePoints = null; // Define globally to ensure it is accessible in drawCanvas
@@ -59,6 +60,8 @@ document.addEventListener("DOMContentLoaded", () => {
     };
 
     loadShapePoints = generateLoadShape(road, bottomRightCornerRoad, spot, canvas.width / scale, canvas.height / scale, difficulty);
+
+    let speedLimit = generateSpeedLimit(difficulty); // Generate speed limit based on difficulty
 
     function updateToggleButton() {
         toggleBtn.textContent =
@@ -208,6 +211,7 @@ document.addEventListener("DOMContentLoaded", () => {
         // Generate the points from generateLoadShape and store them globally
         loadShapePoints = generateLoadShape(road, bottomRightCornerRoad, spot, canvas.width / scale, canvas.height / scale, difficulty);
 
+        speedLimit = generateSpeedLimit(difficulty); // Regenerate speed limit
         drawCanvas(); // Ensure the canvas is updated after regenerating
     });
 
@@ -303,7 +307,7 @@ document.addEventListener("DOMContentLoaded", () => {
     
     
             // Call userPerformance to evaluate performance
-            const { totalTime, spotTime, exitTime, queueTime, cuspWaitTime, queueWaitTime, tonnesPerHour } = userPerformance(curves, outlines, scale, ctx);
+            const { totalTime, spotTime, exitTime, queueTime, cuspWaitTime, queueWaitTime, tonnesPerHour } = userPerformance(curves, outlines, scale, ctx, speedLimit); // Pass speed limit
     
             // Update the top-right display with consistent layout
             updateTopRightDisplay(
@@ -475,6 +479,11 @@ document.addEventListener("DOMContentLoaded", () => {
             ctx.stroke();
             ctx.setLineDash([]); // Reset line dash
             ctx.closePath();
+
+            // Draw the speed limit in the load shape
+            if (spot.speedLimit) {
+                drawSpeedLimit(ctx, loadShapePoints, spot.speedLimit);
+            }
         } else {
             console.error("Load shape points are not defined or empty. Ensure they are generated before drawing.");
         }
@@ -500,6 +509,10 @@ document.addEventListener("DOMContentLoaded", () => {
             y: road.y - 50, // Assuming road height is 100, half of it is 50
         };
 
+        // Draw the speed limit in the load shape
+        if (loadShapePoints && loadShapePoints.length > 0) {
+            drawSpeedLimit(ctx, loadShapePoints, speedLimit);
+        }
     }
 
     drawCanvas();

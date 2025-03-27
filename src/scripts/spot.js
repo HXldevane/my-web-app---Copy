@@ -56,4 +56,46 @@ function drawSpot(ctx, spot) {
     ctx.restore();
 }
 
-export { generateSpot, drawSpot };
+function generateSpeedLimit(difficulty) {
+    let speedLimit;
+    if (difficulty === "easy") {
+        speedLimit = Math.floor(Math.random() * (40 - 30 + 1) + 30); // Random between 30 and 40 kph
+    } else if (difficulty === "medium") {
+        speedLimit = Math.floor(Math.random() * (40 - 20 + 1) + 20); // Random between 20 and 40 kph
+    } else if (difficulty === "hard") {
+        speedLimit = Math.floor(Math.random() * (40 - 15 + 1) + 15); // Random between 15 and 40 kph
+    }
+
+    // Round to the nearest 5
+    return Math.round(speedLimit / 5) * 5;
+}
+
+function drawSpeedLimit(ctx, loadShapePoints, speedLimit) {
+    if (!loadShapePoints || loadShapePoints.length === 0) return;
+
+    // Position the speed limit in the top-right of the load shape
+    const topRight = loadShapePoints[1]; // Last point of the load shape
+    const x = topRight.x + 80; // Offset 50px to the left
+    const y = topRight.y + 80; // Offset 50px down
+
+    // Draw the speed limit circle
+    ctx.save();
+    ctx.beginPath();
+    ctx.arc(x, y, 20, 0, Math.PI * 2); // Circle with radius 20
+    ctx.fillStyle = "white"; // White background
+    ctx.fill();
+    ctx.lineWidth = 4;
+    ctx.strokeStyle = "red"; // Red outline
+    ctx.stroke();
+    ctx.closePath();
+
+    // Draw the speed limit text
+    ctx.font = "20px Arial";
+    ctx.fillStyle = "black";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillText(`${speedLimit}`, x, y); // Display the speed limit
+    ctx.restore();
+}
+
+export { generateSpot, drawSpot, generateSpeedLimit, drawSpeedLimit };
