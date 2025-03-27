@@ -77,7 +77,7 @@ document.addEventListener("DOMContentLoaded", () => {
             const point = points[i];
             if (point.x !== null && point.y !== null) {
                 const distance = Math.sqrt((x - point.x) ** 2 + (y - point.y) ** 2);
-                if (distance <= 10) {
+                if (distance <= 40) { // Change this value to adjust the clickable radius
                     return i;
                 }
             }
@@ -95,7 +95,7 @@ document.addEventListener("DOMContentLoaded", () => {
         const clickedPointIndex = getClickedPointIndex(x, y);
 
         if (mode === "adjust-position") {
-            if (clickedPointIndex !== null && clickedPointIndex !== 2) {
+            if (clickedPointIndex !== null) {
                 selectedPointIndex = clickedPointIndex;
                 console.log(`Point ${points[clickedPointIndex].name} selected for repositioning.`);
             } else if (selectedPointIndex !== null) {
@@ -104,7 +104,6 @@ document.addEventListener("DOMContentLoaded", () => {
                 );
 
                 if (selectedPointIndex === 1 && distanceToSpot < cuspCloseRadius) {
-                    // Prevent cusp placement, remove the point, and show error
                     console.error("Cusp too close to the spot point. Please place it again.");
                     points[selectedPointIndex].x = null;
                     points[selectedPointIndex].y = null;
@@ -113,7 +112,6 @@ document.addEventListener("DOMContentLoaded", () => {
                     points[selectedPointIndex].x = x;
                     points[selectedPointIndex].y = y;
                     console.log(`Point ${points[selectedPointIndex].name} repositioned to (${x}, ${y}).`);
-                    selectedPointIndex = null;
                     hideCuspError(); // Remove the error message if the cusp is placed correctly
                 }
             } else {
@@ -121,19 +119,6 @@ document.addEventListener("DOMContentLoaded", () => {
                     (point, index) => point.x === null && point.y === null && index !== 2
                 );
                 if (nextPointIndex !== -1) {
-                    if (nextPointIndex === 1) {
-                        const distanceToSpot = Math.sqrt(
-                            (x - points[2].x) ** 2 + (y - points[2].y) ** 2
-                        );
-
-                        if (distanceToSpot < cuspCloseRadius) {
-                            // Prevent cusp placement, remove the point, and show error
-                            console.error("Cusp too close to the spot point. Please place it again.");
-                            showCuspError();
-                            return;
-                        }
-                    }
-
                     points[nextPointIndex].x = x;
                     points[nextPointIndex].y = y;
                     console.log(`Point ${points[nextPointIndex].name} placed at (${x}, ${y}).`);
@@ -143,17 +128,16 @@ document.addEventListener("DOMContentLoaded", () => {
                 }
             }
         } else if (mode === "adjust-heading") {
-            if (clickedPointIndex !== null && clickedPointIndex !== 2) {
+            if (clickedPointIndex !== null) {
                 selectedPointIndex = clickedPointIndex;
                 console.log(`Point ${points[clickedPointIndex].name} selected for heading adjustment.`);
             } else if (selectedPointIndex !== null) {
                 const point = points[selectedPointIndex];
                 point.heading = Math.atan2(y - point.y, x - point.x);
                 console.log(`Adjusted heading for point ${point.name} to ${point.heading} radians.`);
-                selectedPointIndex = null;
             }
         }
-        drawCanvas();
+        drawCanvas(); // Redraw the canvas to reflect changes
     });
 
     toggleBtn.addEventListener("click", () => {
