@@ -1,11 +1,11 @@
 function generateSpot(canvasWidth, canvasHeight, scale, difficulty) {
     let x;
     if (difficulty === "easy") {
-        x = Math.random() * (1000 - 800) + 800; // Random x between 800 and 1000
+        x = Math.random() * (870 - 700) + 750; // Random x between 800 and 1000
     } else if (difficulty === "medium") {
-        x = Math.random() * (900 - 750) + 750; // Random x between 750 and 900
+        x = Math.random() * (800 - 700) + 700; // Random x between 750 and 900
     } else if (difficulty === "hard") {
-        x = Math.random() * (850 - 600) + 600; // Random x between 600 and 800
+        x = Math.random() * (750 - 600) + 600; // Random x between 600 and 800
     }
 
     const centerY = canvasHeight / scale / 2;
@@ -81,7 +81,7 @@ function drawSpeedLimit(ctx, loadShapePoints, speedLimit) {
     // Draw the speed limit circle
     ctx.save();
     ctx.beginPath();
-    ctx.arc(x, y, 20, 0, Math.PI * 2); // Circle with radius 20
+    ctx.arc(x, y, 17, 0, Math.PI * 2); // Circle with radius 20
     ctx.fillStyle = "white"; // White background
     ctx.fill();
     ctx.lineWidth = 4;
@@ -90,12 +90,16 @@ function drawSpeedLimit(ctx, loadShapePoints, speedLimit) {
     ctx.closePath();
 
     // Draw the speed limit text
-    ctx.font = "20px Arial";
+    ctx.font = "bold 20px Segoe UI";
+    
     ctx.fillStyle = "black";
     ctx.textAlign = "center";
-    ctx.textBaseline = "middle";
-    ctx.fillText(`${speedLimit}`, x, y); // Display the speed limit
+    ctx.textBaseline = "middle"; // Keep this
+    ctx.fillText(`${speedLimit}`, x, y + 1); // Add a slight vertical nudge
+    
     ctx.restore();
 }
+
+
 
 export { generateSpot, drawSpot, generateSpeedLimit, drawSpeedLimit };

@@ -53,9 +53,11 @@ function calculateTimeForDistance(distance, acceleration, deceleration, maxSpeed
 
 // Function to calculate Tonnes per Hour
 function calculateTonnesPerHour(spotTime) {
+    console.log("Calculating Tonnes per Hour with spotTime:", spotTime); // Debug log
     const effectiveTime = Math.max(135 + spotTime, 180); // Max of 135 + spotTime or 180
     const tonnesPerHour = (3600 / effectiveTime) * 250; // Calculate Tonnes per Hour
-    return tonnesPerHour;
+    console.log("Effective Time:", effectiveTime, "Tonnes per Hour:", tonnesPerHour); // Debug log
+    return isNaN(tonnesPerHour) ? 0 : tonnesPerHour; // Ensure a valid number is returned
 }
 
 // Function to evaluate user performance
@@ -68,31 +70,31 @@ function userPerformance(curves, cuspOutlines, scale, ctx, speedLimit) {
     const queueIntercept = queueInterceptLength(curves, cuspOutlines, ctx);
 
     // Example acceleration, deceleration, and max speed values
-    const emptyAcceleration = 2 / 3.6; // m/s² -> kphh
-    const emptyDeceleration = 2 / 3.6; // m/s² -> kphh
-    const loadedAcceleration = 2 / 3.6; // m/s² -> kphh
-    const loadedDeceleration = 2 / 3.6; // m/s² -> kphh
-    const maxForwardSpeed = speedLimit / 3.6; // Convert kph to m/s
-    console.log(speedLimit);
+    const emptyAcceleration = 2 / 3.6; // km/h² -> m/s² 
+    const emptyDeceleration = 2 / 3.6; // km/h² -> m/s²  
+    const loadedAcceleration = 2 / 3.6; // km/h² -> m/s² 
+    const loadedDeceleration = 2 / 3.6; // km/h² -> m/s² 
+    const maxForwardSpeed = speedLimit / 3.6; // km/h -> m/s
+    console.log("Speed Limit:", speedLimit); // Debug log
 
-    const reverseAcceleration = 1 / 3.6; // m/s² -> kphh
-    const reverseDeceleration = 1 / 3.6; // m/s² -> kphh
-    const maxReverseSpeed = 12 / 3.6; // m/s -> kph
+    const reverseAcceleration = 1 / 3.6; // km/h² -> m/s²  
+    const reverseDeceleration = 1 / 3.6; // km/h² -> m/s² 
+    const maxReverseSpeed = 12 / 3.6; // kph -> m/s
 
     // Calculate and log time for each path
     const exitTime = calculateTimeForDistance(exitLength, loadedAcceleration, 0, maxForwardSpeed);
-    const queueTime = calculateTimeForDistance(queueLength, reverseAcceleration, reverseDeceleration, maxForwardSpeed);
-    const cuspTime = calculateTimeForDistance(cuspLength, emptyAcceleration, emptyDeceleration, maxReverseSpeed);
+    const QueuetoCuspTime = calculateTimeForDistance(queueLength, emptyAcceleration, emptyDeceleration, maxForwardSpeed);
+    const CusptoSpotTime = calculateTimeForDistance(cuspLength, reverseAcceleration, reverseDeceleration, maxReverseSpeed);
 
-    const cuspWaitTime = calculateTimeForDistance(cuspIntercept.furthestDistance, emptyAcceleration, 0, maxForwardSpeed);
-    const queueWaitTime = calculateTimeForDistance(queueIntercept.furthestDistance, emptyAcceleration, 0, maxForwardSpeed);
+    const CusptoSpotWaitTime = calculateTimeForDistance(cuspIntercept.furthestDistance, loadedAcceleration, 0, maxForwardSpeed);
+    const QueuetoCuspWaitTime = calculateTimeForDistance(queueIntercept.furthestDistance, loadedAcceleration, 0, maxForwardSpeed);
 
-    const totalTime = exitTime + queueTime + cuspTime + cuspWaitTime + queueWaitTime;
-    const spotTime = cuspTime + cuspWaitTime;
-
+    const totalTime = exitTime + CusptoSpotTime + QueuetoCuspTime + CusptoSpotWaitTime + QueuetoCuspWaitTime; // Truck Exchange Calc
+    const spotTime = CusptoSpotTime + CusptoSpotWaitTime; // Used for tonnes per Hour calc
+    
     const tonnesPerHour = calculateTonnesPerHour(spotTime); // Calculate Tonnes per Hour
-
-    return { totalTime, spotTime, exitTime, queueTime, cuspWaitTime, queueWaitTime, tonnesPerHour };
+    console.log("Performance Metrics:", { totalTime, spotTime, exitTime, CusptoSpotTime, CusptoSpotWaitTime, QueuetoCuspTime, CusptoSpotWaitTime, QueuetoCuspWaitTime, tonnesPerHour }); // Debug log
+    return { totalTime, spotTime, exitTime, CusptoSpotTime,CusptoSpotWaitTime, QueuetoCuspTime, QueuetoCuspWaitTime, tonnesPerHour };
 }
 
 // Function to calculate the length of the exit path (spot to road exit)
@@ -195,7 +197,7 @@ function cuspInterceptLength(curves, cuspOutlines, ctx) {
     }
 
     // Plot the line from the spot point to the intersection if found
-    if (intersectionFound && ctx) {
+    /* if (intersectionFound && ctx) {
         ctx.beginPath();
         ctx.moveTo(spotPoint.x, spotPoint.y);
         ctx.lineTo(intersectionFound.x, intersectionFound.y);
@@ -205,7 +207,7 @@ function cuspInterceptLength(curves, cuspOutlines, ctx) {
         ctx.closePath();
     } else {
         console.log("No intersections found between exit-to-road-exit/spot-to-exit and cusp outlines.");
-    }
+    } */
 
     return { intersections: intersectionFound ? [intersectionFound] : [], furthestDistance: intersectionFound ? calculateSegmentLength(spotPoint, intersectionFound) : 0 };
 }
@@ -272,7 +274,7 @@ function queueInterceptLength(curves, cuspOutlines, ctx) {
     }
 
     // Plot the line from the spot point to the intersection if found
-    if (intersectionFound && ctx) {
+    /* if (intersectionFound && ctx) {
         ctx.beginPath();
         ctx.moveTo(spotPoint.x, spotPoint.y);
         ctx.lineTo(intersectionFound.x, intersectionFound.y);
@@ -282,7 +284,7 @@ function queueInterceptLength(curves, cuspOutlines, ctx) {
         ctx.closePath();
     } else {
         console.log("No intersections found between exit-to-road-exit/spot-to-exit and queue outlines.");
-    }
+    }*/
 
     return { intersections: intersectionFound ? [intersectionFound] : [], furthestDistance: intersectionFound ? calculateSegmentLength(spotPoint, intersectionFound) : 0 };
 }

@@ -11,6 +11,8 @@ let kickedBeenOnYellow = false; // Define as a global variable
 let loadShapePoints = null; // Define globally to ensure it is accessible in drawCanvas
 let showOffsets = false; // Global flag to track whether offsets are displayed
 
+const cuspCloseRadius = 130;
+
 document.addEventListener("DOMContentLoaded", () => {
     const canvas = document.getElementById("canvas");
     const ctx = canvas.getContext("2d");
@@ -24,10 +26,10 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // High-quality canvas rendering
     const scale = window.devicePixelRatio;
-    canvas.width = 1200 * scale;
-    canvas.height = 600 * scale;
-    canvas.style.width = "1200px";
-    canvas.style.height = "600px";
+    canvas.width = 940 * scale;
+    canvas.height = 520 * scale;
+    canvas.style.width = "940px";
+    canvas.style.height = "520px";
     ctx.scale(scale, scale);
 
     // Set the canvas background to a very, very light grey
@@ -65,7 +67,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     function updateToggleButton() {
         toggleBtn.textContent =
-            mode === "adjust-position" ? "Switch to Adjust Heading" : "Switch to Adjust Position";
+            mode === "adjust-position" ? "Adjust Heading" : "Adjust Position";
     }
 
     updateToggleButton();
@@ -101,7 +103,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     (x - points[2].x) ** 2 + (y - points[2].y) ** 2
                 );
 
-                if (selectedPointIndex === 1 && distanceToSpot < 200) {
+                if (selectedPointIndex === 1 && distanceToSpot < cuspCloseRadius) {
                     // Prevent cusp placement, remove the point, and show error
                     console.error("Cusp too close to the spot point. Please place it again.");
                     points[selectedPointIndex].x = null;
@@ -124,7 +126,7 @@ document.addEventListener("DOMContentLoaded", () => {
                             (x - points[2].x) ** 2 + (y - points[2].y) ** 2
                         );
 
-                        if (distanceToSpot < 200) {
+                        if (distanceToSpot < cuspCloseRadius) {
                             // Prevent cusp placement, remove the point, and show error
                             console.error("Cusp too close to the spot point. Please place it again.");
                             showCuspError();
@@ -171,12 +173,12 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     
         displayContainer.innerHTML = `
-            <div><strong>Truck Exchange Time:</strong> - (s)</div>
+             <div><strong>Truck Exch. Time:</strong> - (s)</div>
             <div><strong>Time to Spot:</strong> - (s)</div>
-            <div><strong>Time to Queue:</strong> - (s)</div>
+            <div><strong>Spot Wait:</strong> - (s)</div>
+            <div><strong>Time to Cusp:</strong> - (s)</div>
             <div><strong>Cusp Wait:</strong> - (s)</div>
-            <div><strong>Queue Wait:</strong> - (s)</div>
-            <div><strong>Tonnes per Hour:</strong> -</div>
+            <div><strong>Tonnes per Hour:</strong> - (T/h)</div>
         `;
     }
 
@@ -221,7 +223,7 @@ document.addEventListener("DOMContentLoaded", () => {
         drawCanvas(); // Redraw the canvas without outlines, overlap, or shading
     });
 
-    function updateTopRightDisplay(totalTime, spotTime, exitTime = "-", queueTime = "-", cuspWaitTime = "-", queueWaitTime = "-", tonnesPerHour = "-") {
+    function updateTopRightDisplay(totalTime, spotTime, exitTime = "-",CusptoSpotTime = "-",CusptoSpotWaitTime = "-", QueuetoCuspTime = "-",  QueuetoCuspWaitTime = "-", tonnesPerHour = "-") {
         const displayContainer = document.getElementById("top-right-display");
     
         if (!displayContainer) {
@@ -230,13 +232,15 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     
         displayContainer.innerHTML = `
-            <div><strong>Truck Exchange Time:</strong> ${totalTime.toFixed(2)} (s)</div>
-            <div><strong>Time to Spot:</strong> ${spotTime.toFixed(2)} (s)</div>
-            <div><strong>Time to Queue:</strong> ${queueTime} (s)</div>
-            <div><strong>Cusp Wait:</strong> ${cuspWaitTime} (s)</div>
-            <div><strong>Queue Wait:</strong> ${queueWaitTime} (s)</div>
-            <div><strong>Tonnes per Hour:</strong> ${tonnesPerHour.toFixed(2)}</div>
+            <div><strong>Truck Exch. Time:</strong> ${totalTime} (s)</div>
+            <div><strong>Time to Spot:</strong> ${CusptoSpotTime} (s)</div>
+            <div><strong>Spot Wait:</strong> ${CusptoSpotWaitTime} (s)</div>
+            <div><strong>Time to Cusp:</strong> ${QueuetoCuspTime} (s)</div>
+            <div><strong>Cusp Wait:</strong> ${QueuetoCuspWaitTime} (s)</div>
+            <div><strong>Tonnes per Hour:</strong> ${tonnesPerHour} (T/h)</div>
         `;
+    
+       
     }
 
     function showBoundsError() {
@@ -244,6 +248,9 @@ document.addEventListener("DOMContentLoaded", () => {
         if (boundsError) {
             boundsError.style.display = "block";
         }
+
+        // Clear the data table
+        clearTopRightDisplay();
     }
 
     function hideBoundsError() {
@@ -293,6 +300,10 @@ document.addEventListener("DOMContentLoaded", () => {
             if (hasIntersections) {
                 console.error("Bounds Error: Intersection detected.");
                 showBoundsError(); // Display the error message
+
+                // Reset the data table to default values
+                updateTopRightDisplay("-", "-", "-", "-", "-", "-", "-", "-");
+                return; // Exit early if bounds error occurs
             }
     
           
@@ -307,17 +318,29 @@ document.addEventListener("DOMContentLoaded", () => {
     
     
             // Call userPerformance to evaluate performance
-            const { totalTime, spotTime, exitTime, queueTime, cuspWaitTime, queueWaitTime, tonnesPerHour } = userPerformance(curves, outlines, scale, ctx, speedLimit); // Pass speed limit
+            const {
+                totalTime,
+                spotTime,
+                exitTime,
+                CusptoSpotTime,
+                CusptoSpotWaitTime,
+                QueuetoCuspTime,
+                QueuetoCuspWaitTime,
+                tonnesPerHour,
+            } = userPerformance(curves, outlines, scale, ctx, speedLimit); // Pass speed limit
+    
+            console.log("Tonnes per Hour:", tonnesPerHour); // Debug log
     
             // Update the top-right display with consistent layout
             updateTopRightDisplay(
-                totalTime,
-                spotTime,
+                totalTime.toFixed(2),
+                spotTime.toFixed(2),
                 exitTime.toFixed(2),
-                queueTime.toFixed(2),
-                cuspWaitTime.toFixed(2),
-                queueWaitTime.toFixed(2),
-                tonnesPerHour
+                CusptoSpotTime.toFixed(2),
+                CusptoSpotWaitTime.toFixed(2),
+                QueuetoCuspTime.toFixed(2),
+                QueuetoCuspWaitTime.toFixed(2),
+                tonnesPerHour.toFixed(0)
             );
     
             window.curves = curves; // Store curves globally for simulation
@@ -496,7 +519,7 @@ document.addEventListener("DOMContentLoaded", () => {
             ctx.lineWidth = 2;
 
             ctx.beginPath();
-            ctx.arc(points[2].x, points[2].y, 200, 0, Math.PI * 2); // 200px radius circle
+            ctx.arc(points[2].x, points[2].y, cuspCloseRadius, 0, Math.PI * 2); // 120px radius circle
             ctx.stroke();
             ctx.closePath();
 

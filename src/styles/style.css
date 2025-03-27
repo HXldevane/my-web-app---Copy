@@ -39,11 +39,12 @@ footer {
     display: flex;
     flex-direction: column;
     align-items: center;
-    background: white;
-    padding: 10px;
-    border: 1px solid #ccc;
-    border-radius: 8px;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    background: white; /* Background color */
+    padding: 10px; /* Padding inside the container */
+    border: 1px solid #ccc; /* Border around the container */
+    border-radius: 8px; /* Rounded corners */
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); /* Shadow effect */
+    /* Add or modify width and height here to adjust the size */
 }
 
 #canvas {
@@ -51,10 +52,11 @@ footer {
     width: 400px;
     height: 400px;
     cursor: crosshair;
+    margin-top: 10px; /* Add spacing between the heading and canvas */
 }
 
 #controls {
-    margin-top: 10px;
+    margin-top: 8px;
 }
 
 button {
@@ -73,24 +75,25 @@ button:hover {
 }
 
 #top-right-display {
-    display: flex;
-    justify-content: center;
-    gap: 30px; /* Increased gap for more space */
-    position: absolute;
-    top: 10px;
-    left: 50%;
-    transform: translateX(-50%);
+    display: grid;
+    grid-template-columns: repeat(6, 1fr); /* Create 6 equal columns */
+    text-align: center;
+    gap: 10px;
+    position: relative;
+    margin: 0 auto;
     background: white;
     padding: 10px;
     border: 2px solid black;
     border-radius: 5px;
     font-family: Arial, sans-serif;
     font-size: 14px;
-    width: 80%; /* Make the display wider */
+    width: 90%;
+    margin-bottom: 10px;
 }
 
 #top-right-display div {
-    text-align: center;
+    display: flex;
+    flex-direction: column; /* Stack title and value vertically */
 }
 
 #bounds-error {

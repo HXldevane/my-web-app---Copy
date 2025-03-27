@@ -2,7 +2,7 @@
 function generateRandomRoad(canvasHeight, scale) {
     const angle = Math.random() * 60 - 30; // Random angle between -30 and 30 degrees
     const x = 100; // Fixed x position
-    const y = Math.random() * 100 - Math.random() * 100 +  + (canvasHeight/scale / 2); // Between 150px from top and bottom
+    const y = Math.random() * 50 - Math.random() * 50 +  + (canvasHeight/scale / 2); // Between 150px from top and bottom
 
     return { x, y, angle };
 }
@@ -135,22 +135,22 @@ function generateLoadShape(road, topRightCornerRoad, spot, canvasWidth, canvasHe
 
     const aboveRoad = {
         x: topRightCornerRoad.x + (difficulty === "easy" ? 10 : difficulty === "medium" ? 30 : 100) * (Math.random() - 0.5),
-        y: topRightCornerRoad.y - (difficulty === "easy" ? 170 : difficulty === "medium" ? 150 : 80),
+        y: topRightCornerRoad.y - (difficulty === "easy" ? 140 : difficulty === "medium" ? 130 : 80),
     };
 
     const aboveSpot = {
         x: spot.x + (difficulty === "easy" ? 20 : difficulty === "medium" ? 40 : 60), // Always slightly to the right of the spot
-        y: spot.y - (difficulty === "easy" ? 170 : difficulty === "medium" ? 150 : 80),
+        y: spot.y - (difficulty === "easy" ? 140 : difficulty === "medium" ? 130 : 80),
     };
 
     const belowSpot = {
         x: spot.x + (difficulty === "easy" ? 20 : difficulty === "medium" ? 40 : 60), // Always slightly to the right of the spot
-        y: spot.y + (difficulty === "easy" ? 170 : difficulty === "medium" ? 150 : 80),
+        y: spot.y + (difficulty === "easy" ? 140 : difficulty === "medium" ? 130 : 80),
     };
 
     const belowRoad = {
         x: bottomRightCornerRoad.x + (difficulty === "easy" ? 10 : difficulty === "medium" ? 30 : 100) * (Math.random() - 0.5),
-        y: bottomRightCornerRoad.y + (difficulty === "easy" ? 170 : difficulty === "medium" ? 150 : 80),
+        y: bottomRightCornerRoad.y + (difficulty === "easy" ? 140 : difficulty === "medium" ? 130 : 80),
     };
 
     const numTopInterp = difficulty === "hard" ? Math.floor(Math.random() * 5) + 1 : Math.floor(Math.random() * 3) + 1;

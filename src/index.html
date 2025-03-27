@@ -7,47 +7,69 @@
     <link rel="stylesheet" href="styles/style.css">
     <style>
         #top-right-display {
-            display: flex;
-            justify-content: center;
-            gap: 30px; /* Increased gap for more space */
-            position: absolute;
-            top: 10px;
-            left: 50%;
-            transform: translateX(-50%);
+            display: grid;
+            grid-template-columns: repeat(6, 1fr); /* Create 6 equal columns */
+            text-align: center;
+            gap: 7px;
+            position: relative;
+            margin: 0 auto;
             background: white;
             padding: 10px;
             border: 2px solid black;
             border-radius: 5px;
             font-family: Arial, sans-serif;
             font-size: 14px;
-            width: 80%; /* Make the display wider */
+            width: 90%;
+            margin-bottom: 10px;
         }
         #top-right-display div {
-            text-align: center;
+            display: flex;
+            flex-direction: column; /* Stack title and value vertically */
+        }
+        #canvas {
+            margin-top: 10px;
         }
     </style>
 </head>
 <body>
     <div id="app-container">
+        <div id="top-right-display">
+            <div>
+                <strong>Truck Exch. Time:</strong>
+                <span id="truck-exchange-time">- (s)</span>
+            </div>
+            <div>
+                <strong>Time to Spot:</strong>
+                <span id="time-to-spot">- (s)</span>
+            </div>
+            <div>
+                <strong>Spot Wait:</strong>
+                <span id="cusp-wait">- (s)</span>
+            </div>
+            <div>
+                <strong>Time to Cusp:</strong>
+                <span id="time-to-cusp">- (s)</span>
+            </div>
+            <div>
+                <strong>Cusp Wait:</strong>
+                <span id="queue-wait">- (s)</span>
+            </div>
+            <div>
+                <strong>Tonnes per Hour:</strong>
+                <span id="tonnes-per-hour">- (T/h)</span> <!-- Ensure this element exists -->
+            </div>
+        </div>
+        <canvas id="canvas"></canvas>
         <div id="bounds-error">Bounds Error</div> <!-- Moved to the front -->
         <div id="cusp-error" style="display: none;">Cusp Too Close</div> <!-- New error message -->
-        <canvas id="canvas"></canvas>
         <div id="controls">
             <button id="regenerate-btn">Regenerate</button>
-            <button id="toggle-btn">Switch to Adjust Heading</button>
+            <button id="difficulty-btn">Difficulty: Easy</button> <!-- New button -->
+            <button id="toggle-btn">Adjust Heading</button>
             <button id="clear-lines-btn">Clear Lines</button>
             <button id="draw-lines-btn">Calculate</button>
-            <button id="simulate-btn">Simulate</button> <!-- New button -->
-            <button id="difficulty-btn">Difficulty: Easy</button> <!-- New button -->
+            <button id="simulate-btn"><s>Simulate</s></button> <!-- New button -->
         </div>
-    </div>
-    <div id="top-right-display">
-        <div><strong>Truck Exchange Time:</strong> - (s)</div>
-        <div><strong>Time to Spot:</strong> - (s)</div>
-        <div><strong>Time to Queue:</strong> - (s)</div> <!-- New metric -->
-        <div><strong>Cusp Wait:</strong> - (s)</div> <!-- New metric -->
-        <div><strong>Queue Wait:</strong> - (s)</div> <!-- New metric -->
-        <div><strong>Tonnes per Hour:</strong> -</div>
     </div>
     <script type="module" src="scripts/main.js"></script>
 </body>
