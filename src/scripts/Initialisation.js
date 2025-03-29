@@ -1,5 +1,5 @@
 import { generateSpot, drawSpot } from './spot.js';
-import { generateAllRoadPoints, drawRoad, generateLoadShape } from './road.js';
+import { generateAllRoadPoints, drawRoad, generateLoadShape, generateRoadPoints } from './road.js';
 import { generateSpeedLimit, drawSpeedLimit } from './spot.js';
 
 function drawLoadArea(ctx, loadShapePoints) {
@@ -95,26 +95,30 @@ function initialiseRandomMap(ctx, canvasWidth, canvasHeight, scale, difficulty, 
 }
 
 function initialiseSetMap(ctx, canvasWidth, canvasHeight, scale, difficulty, points, existingLoadShapePoints) {
-    // Generate and draw road points
-    const { road, roadEntry, roadExit } = generateAllRoadPoints(canvasHeight, scale);
+    // Generate road at clicked point with heading of 0 degrees
+    const road = {
+        x: points[0].x,
+        y: points[0].y,
+        angle: 0, // 0 degrees
+    };
+    const { roadEntry, roadExit } = generateRoadPoints(road);
     drawRoad(ctx, road, roadEntry, roadExit);
 
-    // Generate and draw a spot
-    const spot = generateSpot(canvasWidth, canvasHeight, scale, difficulty);
-    points[2] = { ...spot, name: "Spot" };
-    drawSpot(ctx, spot);
+    // Generate spot at clicked point with heading of -180 degrees
+    const spot = {
+        x: points[1].x,
+        y: points[1].y,
+        heading: Math.PI, // -180 degrees in radians
+    };
 
-    // Use the existing load shape points without regenerating
-    const loadShapePoints = existingLoadShapePoints;
+    // Assign names to user-defined points
+    points[0].name = "Road Entry";
+    points[1].name = "Queue";
+    points[2].name = "Cusp";
+    points[3].name = "Exit";
 
-    // Draw the load area
-    drawLoadArea(ctx, loadShapePoints);
-
-    // Draw speed limit using the existing load shape points
-    const speedLimit = generateSpeedLimit(difficulty);
-    drawSpeedLimit(ctx, loadShapePoints, speedLimit);
-
-    return { road, roadEntry, roadExit, spot, loadShapePoints, speedLimit };
+    // Return generated data without drawing
+    return { road, roadEntry, roadExit, spot, loadShapePoints: existingLoadShapePoints, speedLimit: null };
 }
 
 export { initialiseRandomMap, initialiseSetMap, drawLoadArea };

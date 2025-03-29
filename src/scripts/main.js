@@ -431,7 +431,12 @@ document.addEventListener("DOMContentLoaded", () => {
         ctx.fillStyle = "#f9f9f9"; // Very light grey
         ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-        drawRoad(ctx, road, roadEntry, roadExit); // Plot the road
+        // Draw the road only if its points are not null
+        if (road && roadEntry && roadExit) {
+            ctx.save();
+            drawRoad(ctx, road, roadEntry, roadExit);
+            ctx.restore();
+        }
 
         // Redraw the load area
         if (loadShapePoints && loadShapePoints.length > 0) {
@@ -465,8 +470,6 @@ document.addEventListener("DOMContentLoaded", () => {
         // Always draw the purple splines
         const allPoints = [roadEntry, points[0], points[1], points[2], points[3], roadExit];
         drawSplines(ctx, allPoints, minRadius); // Do not pass true to avoid drawing outlines
-
-        
 
         // Draw the red dotted circle around the spot point if the "cusp too close" error is active
         if (document.getElementById("cusp-error").style.display === "block") {
