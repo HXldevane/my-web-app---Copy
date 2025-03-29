@@ -51,27 +51,29 @@ function drawQueue(ctx, queue, color, isSelected) {
     ctx.fill();
     ctx.closePath();
 
-    // Draw the square around the dot
-    const squareSize = 30;
+    // Draw the circle around the dot
+    const circleRadius = 15;
     ctx.beginPath();
-    ctx.rect(-squareSize / 2, -squareSize / 2, squareSize, squareSize);
+    ctx.arc(0, 0, circleRadius, 0, Math.PI * 2);
     ctx.strokeStyle = color;
     ctx.lineWidth = 2;
     ctx.stroke();
     ctx.closePath();
 
-    // Draw the triangle on the right edge of the square, pushed by 2px
+    // Draw the triangle on the right edge of the circle, pushed by 2px
     const triangleSize = 10;
     ctx.beginPath();
-    ctx.moveTo(squareSize / 2 + triangleSize + 2, 0); // Tip of the triangle
-    ctx.lineTo(squareSize / 2 + 2, -triangleSize / 2); // Top corner
-    ctx.lineTo(squareSize / 2 + 2, triangleSize / 2); // Bottom corner
+    ctx.moveTo(circleRadius + triangleSize + 2, 0); // Tip of the triangle
+    ctx.lineTo(circleRadius + 2, -triangleSize / 2); // Top corner
+    ctx.lineTo(circleRadius + 2, triangleSize / 2); // Bottom corner
     ctx.closePath();
     ctx.strokeStyle = color;
     ctx.lineWidth = 2;
     ctx.stroke();
 
     ctx.restore();
+
+    
 }
 
 function drawCusp(ctx, cusp, color, isSelected) {
@@ -121,21 +123,21 @@ function drawExit(ctx, exit, color, isSelected) {
     ctx.fill();
     ctx.closePath();
 
-    // Draw the circle around the dot
-    const circleRadius = 15;
+    // Draw the square around the dot
+    const squareSize = 30;
     ctx.beginPath();
-    ctx.arc(0, 0, circleRadius, 0, Math.PI * 2);
+    ctx.rect(-squareSize / 2, -squareSize / 2, squareSize, squareSize);
     ctx.strokeStyle = color;
     ctx.lineWidth = 2;
     ctx.stroke();
     ctx.closePath();
 
-    // Draw the triangle on the right edge of the circle, pushed by 2px
+    // Draw the triangle on the right edge of the square, pushed by 2px
     const triangleSize = 10;
     ctx.beginPath();
-    ctx.moveTo(circleRadius + triangleSize + 2, 0); // Tip of the triangle
-    ctx.lineTo(circleRadius + 2, -triangleSize / 2); // Top corner
-    ctx.lineTo(circleRadius + 2, triangleSize / 2); // Bottom corner
+    ctx.moveTo(squareSize / 2 + triangleSize + 2, 0); // Tip of the triangle
+    ctx.lineTo(squareSize / 2 + 2, -triangleSize / 2); // Top corner
+    ctx.lineTo(squareSize / 2 + 2, triangleSize / 2); // Bottom corner
     ctx.closePath();
     ctx.strokeStyle = color;
     ctx.lineWidth = 2;

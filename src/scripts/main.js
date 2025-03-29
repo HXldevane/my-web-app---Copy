@@ -1,3 +1,4 @@
+import { initialiseRandomMap, initialiseSetMap, drawLoadArea } from "./Initialisation.js";
 import { drawSplines } from "./lines.js";
 import { generateAllRoadPoints, drawRoad, generateLoadShape } from "./road.js";
 import { generateSpot, drawSpot } from "./spot.js"; // Removed duplicate drawSpeedLimit import
@@ -12,6 +13,8 @@ let loadShapePoints = null; // Define globally to ensure it is accessible in dra
 let showOffsets = false; // Global flag to track whether offsets are displayed
 
 const cuspCloseRadius = 130;
+
+let road, roadEntry, roadExit, spot, speedLimit; // Declare variables globally
 
 document.addEventListener("DOMContentLoaded", () => {
     const canvas = document.getElementById("canvas");
@@ -39,34 +42,32 @@ document.addEventListener("DOMContentLoaded", () => {
     ctx.fillStyle = "#f9f9f9"; // Very light grey
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-    const points = initializePoints();
+    const points = initializePoints(); // Ensure points array is initialized here
     let selectedPointIndex = null;
     let mode = "adjust-position";
     const minRadius = 70;
     let difficulty = "easy"; // Default difficulty
 
-    // Generate all road points
-    let { road, roadEntry, roadExit } = generateAllRoadPoints(canvas.height, scale);
+    function setupCanvas() {
+        // Clear the canvas
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-    // Ensure the spot is set on start
-    let spot = generateSpot(canvas.width, canvas.height, scale, difficulty); // Pass difficulty
-    points[2] = { ...spot, name: "Spot" };
+        const file = fileUpload.files[0]; // Check if a file is uploaded
+        const isJsonFile = file && file.name.endsWith(".json"); // Check if the file is a .json file
 
-    let spline = null; // Initialize spline variable
+        const result = isJsonFile
+            ? initialiseSetMap(ctx, canvas.width, canvas.height, scale, difficulty, points)
+            : initialiseRandomMap(ctx, canvas.width, canvas.height, scale, difficulty, points);
 
-    // Generate the load shape on page load
-    const angle = road.angle * (Math.PI / 180);
-    const halfWidth = 30;
-    const halfHeight = 50;
+        road = result.road;
+        roadEntry = result.roadEntry;
+        roadExit = result.roadExit;
+        spot = result.spot;
+        loadShapePoints = result.loadShapePoints;
+        speedLimit = result.speedLimit;
+    }
 
-    const bottomRightCornerRoad = {
-        x: road.x + halfWidth * Math.cos(angle) + halfHeight * Math.sin(angle),
-        y: road.y + halfWidth * Math.sin(angle) - halfHeight * Math.cos(angle),
-    };
-
-    loadShapePoints = generateLoadShape(road, bottomRightCornerRoad, spot, canvas.width / scale, canvas.height / scale, difficulty);
-
-    let speedLimit = generateSpeedLimit(difficulty); // Generate speed limit based on difficulty
+    setupCanvas(); // Initialize on load
 
     function updateToggleButton() {
         toggleBtn.textContent =
@@ -188,7 +189,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     regenerateBtn.addEventListener("click", () => {
         stopAnimations(); // Stop any ongoing animations
-        resetPoints(points);
+        resetPoints(points); // Reset points array
         selectedPointIndex = null;
         allPointsPlaced = false; // Reset placement state
         updateToggleButton();
@@ -202,27 +203,7 @@ document.addEventListener("DOMContentLoaded", () => {
         points[3].heading = Math.PI; // Exit: 180 degrees
 
         console.log("Canvas regenerated. All points reset.");
-        ({ road, roadEntry, roadExit } = generateAllRoadPoints(canvas.height, scale)); // Regenerate all road points
-        spot = generateSpot(canvas.width, canvas.height, scale, difficulty); // Pass difficulty
-        points[2] = { ...spot, name: "Spot" };
-
-        // Calculate bottomRightCornerRoad dynamically considering the road's rotation angle
-        const angle = road.angle * (Math.PI / 180); // Convert angle to radians
-        const halfWidth = 30; // Half of the road width (60 / 2)
-        const halfHeight = 50; // Half of the road height (100 / 2)
-
-        const bottomRightCornerRoad = {
-            x: road.x + halfWidth * Math.cos(angle) + halfHeight * Math.sin(angle),
-            y: road.y + halfWidth * Math.sin(angle) - halfHeight * Math.cos(angle),
-        };
-
-        // Generate the points from generateLoadShape and store them globally
-        loadShapePoints = generateLoadShape(road, bottomRightCornerRoad, spot, canvas.width / scale, canvas.height / scale, difficulty);
-
-        speedLimit = generateSpeedLimit(difficulty); // Regenerate speed limit
-        drawCanvas(); // Ensure the canvas is updated after regenerating
-        fileUpload.value = ""; // Clear the file input on regenerate
-        console.log("File upload cleared on regenerate.");
+        setupCanvas(); // Reinitialize the canvas
     });
 
     clearLinesBtn.addEventListener("click", () => {
@@ -388,6 +369,14 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 
     difficultyBtn.addEventListener("click", () => {
+        const file = fileUpload.files[0]; // Check if a file is uploaded
+        const isJsonFile = file && file.name.endsWith(".json"); // Check if the file is a .json file
+    
+        if (isJsonFile) {
+            console.log("Difficulty change ignored because a file is uploaded.");
+            return; // Do nothing if a file is uploaded
+        }
+    
         // Toggle difficulty levels
         if (difficulty === "easy") {
             difficulty = "medium";
@@ -396,20 +385,20 @@ document.addEventListener("DOMContentLoaded", () => {
         } else {
             difficulty = "easy";
         }
-
+    
         // Clear statistics and hide error message
         clearTopRightDisplay();
         hideBoundsError();
-
+    
         // Reset the headings for cusp and exit points
         points[1].heading = -Math.PI / 2; // Cusp: 90 degrees to the left
         points[3].heading = Math.PI; // Exit: 180 degrees
-
+    
         // Update button text to reflect the current difficulty
         difficultyBtn.textContent = `Difficulty: ${difficulty.charAt(0).toUpperCase() + difficulty.slice(1)}`;
-
+    
         console.log(`Difficulty set to: ${difficulty}`);
-        regenerateBtn.click(); // Regenerate the load shape with the new difficulty
+        setupCanvas(); // Reinitialize the canvas with the new difficulty
     });
 
     fileUpload.addEventListener("change", (event) => {
@@ -444,6 +433,11 @@ document.addEventListener("DOMContentLoaded", () => {
 
         drawRoad(ctx, road, roadEntry, roadExit); // Plot the road
 
+        // Redraw the load area
+        if (loadShapePoints && loadShapePoints.length > 0) {
+            drawLoadArea(ctx, loadShapePoints);
+        }
+
         // Define colors for points
         const greenColor = "limegreen";
         const goldColor = "gold";
@@ -472,70 +466,7 @@ document.addEventListener("DOMContentLoaded", () => {
         const allPoints = [roadEntry, points[0], points[1], points[2], points[3], roadExit];
         drawSplines(ctx, allPoints, minRadius); // Do not pass true to avoid drawing outlines
 
-        // Fill the load shape area with a more transparent yellow background and closer grey dot pattern
-        if (loadShapePoints && loadShapePoints.length > 0) {
-            // Create a pattern for the grey dots
-            const patternCanvas = document.createElement("canvas");
-            patternCanvas.width = 3; // Smaller grid for closer dots
-            patternCanvas.height = 3;
-            const patternCtx = patternCanvas.getContext("2d");
-
-            // Draw the grey dots on a transparent background
-            patternCtx.fillStyle = "rgba(0, 0, 0, 0.5)"; // Semi-transparent grey dots
-            patternCtx.beginPath();
-            patternCtx.arc(3, 3, 1, 0, Math.PI * 2); // Smaller dots
-            patternCtx.fill();
-            patternCtx.closePath();
-
-            const pattern = ctx.createPattern(patternCanvas, "repeat");
-
-            // Fill the load shape with the more transparent yellow background
-            ctx.save();
-            ctx.beginPath();
-            ctx.moveTo(loadShapePoints[0].x, loadShapePoints[0].y);
-            for (let i = 1; i < loadShapePoints.length; i++) {
-                ctx.lineTo(loadShapePoints[i].x, loadShapePoints[i].y);
-            }
-            ctx.closePath();
-            ctx.fillStyle = "rgba(255, 255, 0, 0.1)"; // More transparent yellow
-            ctx.fill();
-
-            // Overlay the closer grey dot pattern
-            ctx.fillStyle = pattern;
-            ctx.fill();
-            ctx.restore();
-
-            // Draw the solid black line first
-            ctx.beginPath();
-            ctx.moveTo(loadShapePoints[0].x, loadShapePoints[0].y);
-            for (let i = 1; i < loadShapePoints.length; i++) {
-                ctx.lineTo(loadShapePoints[i].x, loadShapePoints[i].y);
-            }
-            ctx.strokeStyle = "black"; // Solid black line
-            ctx.lineWidth = 2; // Slightly thicker for visibility
-            ctx.stroke();
-            ctx.closePath();
-
-            // Draw the yellow dashed line on top
-            ctx.beginPath();
-            ctx.setLineDash([10, 5]); // Set line to be dashed
-            ctx.moveTo(loadShapePoints[0].x, loadShapePoints[0].y);
-            for (let i = 1; i < loadShapePoints.length; i++) {
-                ctx.lineTo(loadShapePoints[i].x, loadShapePoints[i].y);
-            }
-            ctx.strokeStyle = "gold"; // Yellowy-gold dashed line
-            ctx.lineWidth = 2; // Slightly thinner than the black line
-            ctx.stroke();
-            ctx.setLineDash([]); // Reset line dash
-            ctx.closePath();
-
-            // Draw the speed limit in the load shape
-            if (spot.speedLimit) {
-                drawSpeedLimit(ctx, loadShapePoints, spot.speedLimit);
-            }
-        } else {
-            console.error("Load shape points are not defined or empty. Ensure they are generated before drawing.");
-        }
+        
 
         // Draw the red dotted circle around the spot point if the "cusp too close" error is active
         if (document.getElementById("cusp-error").style.display === "block") {
