@@ -22,7 +22,10 @@ document.addEventListener("DOMContentLoaded", () => {
     const drawLinesBtn = document.getElementById("draw-lines-btn");
     const simulateBtn = document.getElementById("simulate-btn"); // New button
     const difficultyBtn = document.getElementById("difficulty-btn"); // New button
+    const fileUpload = document.getElementById("file-upload");
+    const clearFileBtn = document.getElementById("clear-file-btn");
     let visualToggle = false; // State to track whether visuals are displayed
+    let allPointsPlaced = false; // Track if all points have been placed
 
     // High-quality canvas rendering
     const scale = window.devicePixelRatio;
@@ -68,9 +71,15 @@ document.addEventListener("DOMContentLoaded", () => {
     function updateToggleButton() {
         toggleBtn.textContent =
             mode === "adjust-position" ? "Adjust Heading" : "Adjust Position";
+        toggleBtn.disabled = !allPointsPlaced; // Disable toggle until all points are placed
     }
 
     updateToggleButton();
+
+    function checkAllPointsPlaced() {
+        allPointsPlaced = points.every((point) => point.x !== null && point.y !== null);
+        updateToggleButton();
+    }
 
     function getClickedPointIndex(x, y) {
         for (let i = 0; i < points.length; i++) {
@@ -92,9 +101,18 @@ document.addEventListener("DOMContentLoaded", () => {
 
         console.log(`Canvas clicked at: (${x}, ${y})`);
 
-        const clickedPointIndex = getClickedPointIndex(x, y);
-
-        if (mode === "adjust-position") {
+        if (!allPointsPlaced) {
+            // Place points sequentially
+            const nextPointIndex = points.findIndex((point) => point.x === null && point.y === null);
+            if (nextPointIndex !== -1) {
+                points[nextPointIndex].x = x;
+                points[nextPointIndex].y = y;
+                console.log(`Point ${points[nextPointIndex].name} placed at (${x}, ${y}).`);
+                checkAllPointsPlaced();
+            }
+        } else if (mode === "adjust-position") {
+            // Adjust position only after all points are placed
+            const clickedPointIndex = getClickedPointIndex(x, y);
             if (clickedPointIndex !== null) {
                 selectedPointIndex = clickedPointIndex;
                 console.log(`Point ${points[clickedPointIndex].name} selected for repositioning.`);
@@ -128,6 +146,8 @@ document.addEventListener("DOMContentLoaded", () => {
                 }
             }
         } else if (mode === "adjust-heading") {
+            // Adjust heading
+            const clickedPointIndex = getClickedPointIndex(x, y);
             if (clickedPointIndex !== null) {
                 selectedPointIndex = clickedPointIndex;
                 console.log(`Point ${points[clickedPointIndex].name} selected for heading adjustment.`);
@@ -170,6 +190,8 @@ document.addEventListener("DOMContentLoaded", () => {
         stopAnimations(); // Stop any ongoing animations
         resetPoints(points);
         selectedPointIndex = null;
+        allPointsPlaced = false; // Reset placement state
+        updateToggleButton();
 
         // Clear statistics and hide error message
         clearTopRightDisplay();
@@ -199,6 +221,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
         speedLimit = generateSpeedLimit(difficulty); // Regenerate speed limit
         drawCanvas(); // Ensure the canvas is updated after regenerating
+        fileUpload.value = ""; // Clear the file input on regenerate
+        console.log("File upload cleared on regenerate.");
     });
 
     clearLinesBtn.addEventListener("click", () => {
@@ -386,6 +410,24 @@ document.addEventListener("DOMContentLoaded", () => {
 
         console.log(`Difficulty set to: ${difficulty}`);
         regenerateBtn.click(); // Regenerate the load shape with the new difficulty
+    });
+
+    fileUpload.addEventListener("change", (event) => {
+        const file = event.target.files[0];
+        if (file) {
+            console.log(`File selected: ${file.name}`);
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                console.log("File content:", e.target.result);
+                // Handle the uploaded file content here
+            };
+            reader.readAsText(file);
+        }
+    });
+
+    clearFileBtn.addEventListener("click", () => {
+        fileUpload.value = ""; // Clear the file input
+        console.log("File upload cleared.");
     });
 
     function scheduler(ctx, spotToExitCurve, exitToExitCurve, cuspToSpotCurve, cuspToSpotOutline) {
